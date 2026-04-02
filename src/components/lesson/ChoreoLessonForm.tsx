@@ -58,12 +58,22 @@ export function ChoreoLessonForm({ date, editLesson, onSubmit, onCancel }: Chore
   // Auto-select existing choreography or switch to new mode
   useEffect(() => {
     if (activeChoreographies.length > 0 && !isNewChoreo) {
-      setChoreoId(activeChoreographies[0].id)
+      const choreo = activeChoreographies[0]
+      setChoreoId(choreo.id)
+      setLevelId(choreo.levelId)
     } else if (activeChoreographies.length === 0 && studentId) {
       setIsNewChoreo(true)
       setChoreoId('')
     }
   }, [studentId, activeChoreographies.length]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleChoreoChange = (id: string) => {
+    setChoreoId(id)
+    const choreo = activeChoreographies.find((c) => c.id === id)
+    if (choreo) {
+      setLevelId(choreo.levelId)
+    }
+  }
 
   const selectedLevel = levels?.find((l) => l.id === levelId)
 
@@ -170,23 +180,6 @@ export function ChoreoLessonForm({ date, editLesson, onSubmit, onCancel }: Chore
         </select>
       </div>
 
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          레벨 <span className="text-red-400">*</span>
-        </label>
-        <select
-          value={levelId}
-          onChange={(e) => setLevelId(e.target.value)}
-          className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white"
-          required
-        >
-          <option value="">레벨 선택</option>
-          {levels?.map((l) => (
-            <option key={l.id} value={l.id}>{l.name} — {formatCurrency(l.price)}</option>
-          ))}
-        </select>
-      </div>
-
       {studentId && (
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">안무</label>
@@ -194,12 +187,15 @@ export function ChoreoLessonForm({ date, editLesson, onSubmit, onCancel }: Chore
             <div className="flex flex-col gap-2">
               <select
                 value={choreoId}
-                onChange={(e) => setChoreoId(e.target.value)}
+                onChange={(e) => handleChoreoChange(e.target.value)}
                 className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white"
               >
-                {activeChoreographies.map((c) => (
-                  <option key={c.id} value={c.id}>{c.title}</option>
-                ))}
+                {activeChoreographies.map((c) => {
+                  const lvl = levels?.find((l) => l.id === c.levelId)
+                  return (
+                    <option key={c.id} value={c.id}>{c.title} ({lvl?.name ?? ''})</option>
+                  )
+                })}
               </select>
               <button
                 type="button"
@@ -244,6 +240,29 @@ export function ChoreoLessonForm({ date, editLesson, onSubmit, onCancel }: Chore
           )}
         </div>
       )}
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          레벨 <span className="text-red-400">*</span>
+        </label>
+        {choreoId && !isNewChoreo ? (
+          <div className="px-3 py-2.5 border border-gray-200 rounded-lg bg-gray-50 text-sm text-gray-600">
+            {selectedLevel?.name ?? ''} — {formatCurrency(selectedLevel?.price ?? 0)}
+          </div>
+        ) : (
+          <select
+            value={levelId}
+            onChange={(e) => setLevelId(e.target.value)}
+            className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white"
+            required
+          >
+            <option value="">레벨 선택</option>
+            {levels?.map((l) => (
+              <option key={l.id} value={l.id}>{l.name} — {formatCurrency(l.price)}</option>
+            ))}
+          </select>
+        )}
+      </div>
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">메모</label>
