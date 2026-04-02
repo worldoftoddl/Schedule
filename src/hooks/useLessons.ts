@@ -123,5 +123,48 @@ export function useLessons() {
     await db.payments.where('lessonId').equals(id).delete()
   }
 
-  return { addTimeLesson, addChoreoLesson, deleteTimeLesson, deleteChoreoLesson }
+  const updateTimeLesson = async (id: string, data: {
+    startTime: string
+    endTime: string
+    durationHours: number
+    totalPrice: number
+    studentIds: string[]
+    memo?: string
+  }) => {
+    await db.timeLessons.update(id, {
+      startTime: data.startTime,
+      endTime: data.endTime,
+      durationHours: data.durationHours,
+      totalPrice: data.totalPrice,
+      studentIds: data.studentIds,
+      pricePerStudent: splitPrice(data.totalPrice, data.studentIds.length),
+      memo: data.memo,
+      updatedAt: new Date(),
+    })
+  }
+
+  const updateChoreoLesson = async (id: string, data: {
+    startTime: string
+    endTime: string
+    durationHours: number
+    studentId: string
+    choreoId: string
+    levelId: string
+    price: number
+    memo?: string
+  }) => {
+    await db.choreoLessons.update(id, {
+      startTime: data.startTime,
+      endTime: data.endTime,
+      durationHours: data.durationHours,
+      studentId: data.studentId,
+      choreoId: data.choreoId,
+      levelId: data.levelId,
+      price: data.price,
+      memo: data.memo,
+      updatedAt: new Date(),
+    })
+  }
+
+  return { addTimeLesson, addChoreoLesson, updateTimeLesson, updateChoreoLesson, deleteTimeLesson, deleteChoreoLesson }
 }

@@ -1,14 +1,15 @@
-import { Clock, Music, Users, Trash2 } from 'lucide-react'
+import { Clock, Music, Users, Trash2, Edit2 } from 'lucide-react'
 import type { TimeLesson, ChoreoLesson, Student } from '../../types'
 import { formatCurrency } from '../../utils/format'
 
 interface TimeLessonCardProps {
   lesson: TimeLesson
   students: Student[]
+  onEdit: (lesson: TimeLesson) => void
   onDelete: (id: string) => void
 }
 
-export function TimeLessonCard({ lesson, students, onDelete }: TimeLessonCardProps) {
+export function TimeLessonCard({ lesson, students, onEdit, onDelete }: TimeLessonCardProps) {
   const studentNames = lesson.studentIds
     .map((id) => students.find((s) => s.id === id)?.name ?? '?')
     .join(', ')
@@ -27,12 +28,20 @@ export function TimeLessonCard({ lesson, students, onDelete }: TimeLessonCardPro
             </div>
           </div>
         </div>
-        <button
-          onClick={() => onDelete(lesson.id)}
-          className="p-1 text-gray-300 hover:text-red-400 min-w-[44px] min-h-[44px] flex items-center justify-center -mr-2 -mt-1"
-        >
-          <Trash2 size={16} />
-        </button>
+        <div className="flex items-center">
+          <button
+            onClick={() => onEdit(lesson)}
+            className="p-1 text-gray-300 hover:text-indigo-400 min-w-[44px] min-h-[44px] flex items-center justify-center -mt-1"
+          >
+            <Edit2 size={16} />
+          </button>
+          <button
+            onClick={() => onDelete(lesson.id)}
+            className="p-1 text-gray-300 hover:text-red-400 min-w-[44px] min-h-[44px] flex items-center justify-center -mr-2 -mt-1"
+          >
+            <Trash2 size={16} />
+          </button>
+        </div>
       </div>
       <div className="mt-2 flex items-center gap-1 text-xs text-gray-500">
         <Users size={12} />
@@ -50,6 +59,7 @@ interface ChoreoLessonCardProps {
   studentName: string
   levelName: string
   choreoTitle?: string
+  onEdit: (lesson: ChoreoLesson) => void
   onDelete: (id: string) => void
 }
 
@@ -58,6 +68,7 @@ export function ChoreoLessonCard({
   studentName,
   levelName,
   choreoTitle,
+  onEdit,
   onDelete,
 }: ChoreoLessonCardProps) {
   return (
@@ -76,12 +87,20 @@ export function ChoreoLessonCard({
             </div>
           </div>
         </div>
-        <button
-          onClick={() => onDelete(lesson.id)}
-          className="p-1 text-gray-300 hover:text-red-400 min-w-[44px] min-h-[44px] flex items-center justify-center -mr-2 -mt-1"
-        >
-          <Trash2 size={16} />
-        </button>
+        <div className="flex items-center">
+          <button
+            onClick={() => onEdit(lesson)}
+            className="p-1 text-gray-300 hover:text-indigo-400 min-w-[44px] min-h-[44px] flex items-center justify-center -mt-1"
+          >
+            <Edit2 size={16} />
+          </button>
+          <button
+            onClick={() => onDelete(lesson.id)}
+            className="p-1 text-gray-300 hover:text-red-400 min-w-[44px] min-h-[44px] flex items-center justify-center -mr-2 -mt-1"
+          >
+            <Trash2 size={16} />
+          </button>
+        </div>
       </div>
       <div className="mt-2 text-xs text-gray-500">
         <span>{studentName}</span>

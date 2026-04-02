@@ -30,7 +30,7 @@ export function StudentsPage() {
 
   return (
     <>
-      <Header title="학생 관리" />
+      <Header title="선수 관리" />
       <StudentList
         students={students}
         onAdd={addStudent}

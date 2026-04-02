@@ -39,8 +39,8 @@ const makePayment = (overrides: Partial<Payment> & Pick<Payment, 'studentId' | '
 
 describe('computeSettlement', () => {
   const students = [
-    { id: 's1', name: '학생A' },
-    { id: 's2', name: '학생B' },
+    { id: 's1', name: '선수A' },
+    { id: 's2', name: '선수B' },
   ]
 
   it('computes time lesson totals per student', () => {

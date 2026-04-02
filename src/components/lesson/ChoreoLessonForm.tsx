@@ -3,10 +3,11 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../../db/schema'
 import { formatCurrency } from '../../utils/format'
 import { generateId } from '../../utils/id'
-import type { Choreography } from '../../types'
+import type { ChoreoLesson, Choreography } from '../../types'
 
 interface ChoreoLessonFormProps {
   date: string
+  editLesson?: ChoreoLesson
   onSubmit: (data: {
     date: string
     startTime: string
@@ -22,19 +23,28 @@ interface ChoreoLessonFormProps {
   onCancel: () => void
 }
 
-export function ChoreoLessonForm({ date, onSubmit, onCancel }: ChoreoLessonFormProps) {
-  const [startTime, setStartTime] = useState('10:00')
-  const [endTime, setEndTime] = useState('11:00')
-  const [studentId, setStudentId] = useState('')
-  const [levelId, setLevelId] = useState('')
-  const [choreoId, setChoreoId] = useState('')
+function addOneHour(time: string): string {
+  const [h, m] = time.split(':').map(Number)
+  const nh = Math.min(h + 1, 23)
+  return `${String(nh).padStart(2, '0')}:${String(m).padStart(2, '0')}`
+}
+
+export function ChoreoLessonForm({ date, editLesson, onSubmit, onCancel }: ChoreoLessonFormProps) {
+  const [startTime, setStartTime] = useState(editLesson?.startTime ?? '10:00')
+  const [endTime, setEndTime] = useState(editLesson?.endTime ?? '11:00')
+  const [teamId, setTeamId] = useState('')
+  const [studentId, setStudentId] = useState(editLesson?.studentId ?? '')
+  const [levelId, setLevelId] = useState(editLesson?.levelId ?? '')
+  const [choreoId, setChoreoId] = useState(editLesson?.choreoId ?? '')
   const [newChoreoTitle, setNewChoreoTitle] = useState('')
   const [newChoreoHours, setNewChoreoHours] = useState('5')
   const [isNewChoreo, setIsNewChoreo] = useState(false)
-  const [memo, setMemo] = useState('')
+  const [memo, setMemo] = useState(editLesson?.memo ?? '')
   const [recurring, setRecurring] = useState(false)
 
-  const students = useLiveQuery(() => db.students.orderBy('name').toArray())
+  const teams = useLiveQuery(() => db.teams.orderBy('sortOrder').toArray())
+  const allStudents = useLiveQuery(() => db.students.orderBy('name').toArray())
+  const students = teamId ? allStudents?.filter((s) => s.teamId === teamId) : allStudents
   const levels = useLiveQuery(() => db.choreoLevels.orderBy('sortOrder').toArray())
   const choreographies = useLiveQuery(
     () => studentId
@@ -45,12 +55,15 @@ export function ChoreoLessonForm({ date, onSubmit, onCancel }: ChoreoLessonFormP
 
   const activeChoreographies = choreographies?.filter((c) => c.status === 'in_progress') ?? []
 
-  // Auto-select existing in-progress choreography
+  // Auto-select existing choreography or switch to new mode
   useEffect(() => {
     if (activeChoreographies.length > 0 && !isNewChoreo) {
       setChoreoId(activeChoreographies[0].id)
+    } else if (activeChoreographies.length === 0 && studentId) {
+      setIsNewChoreo(true)
+      setChoreoId('')
     }
-  }, [studentId]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [studentId, activeChoreographies.length]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const selectedLevel = levels?.find((l) => l.id === levelId)
 
@@ -105,7 +118,12 @@ export function ChoreoLessonForm({ date, onSubmit, onCancel }: ChoreoLessonFormP
           <input
             type="time"
             value={startTime}
-            onChange={(e) => setStartTime(e.target.value)}
+            onChange={(e) => {
+              const val = e.target.value
+              setStartTime(val)
+              const minEnd = addOneHour(val)
+              if (endTime < minEnd) setEndTime(minEnd)
+            }}
             className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400"
           />
         </div>
@@ -114,6 +132,7 @@ export function ChoreoLessonForm({ date, onSubmit, onCancel }: ChoreoLessonFormP
           <input
             type="time"
             value={endTime}
+            min={addOneHour(startTime)}
             onChange={(e) => setEndTime(e.target.value)}
             className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400"
           />
@@ -121,8 +140,22 @@ export function ChoreoLessonForm({ date, onSubmit, onCancel }: ChoreoLessonFormP
       </div>
 
       <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">팀</label>
+        <select
+          value={teamId}
+          onChange={(e) => { setTeamId(e.target.value); setStudentId(''); setChoreoId(''); setIsNewChoreo(false) }}
+          className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white"
+        >
+          <option value="">전체</option>
+          {teams?.map((t) => (
+            <option key={t.id} value={t.id}>{t.name}</option>
+          ))}
+        </select>
+      </div>
+
+      <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">
-          학생 <span className="text-red-400">*</span>
+          선수 <span className="text-red-400">*</span>
         </label>
         <select
           value={studentId}
@@ -130,7 +163,7 @@ export function ChoreoLessonForm({ date, onSubmit, onCancel }: ChoreoLessonFormP
           className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white"
           required
         >
-          <option value="">학생 선택</option>
+          <option value="">선수 선택</option>
           {students?.map((s) => (
             <option key={s.id} value={s.id}>{s.name}</option>
           ))}
@@ -223,15 +256,17 @@ export function ChoreoLessonForm({ date, onSubmit, onCancel }: ChoreoLessonFormP
         />
       </div>
 
-      <label className="flex items-center gap-2 cursor-pointer">
-        <input
-          type="checkbox"
-          checked={recurring}
-          onChange={(e) => setRecurring(e.target.checked)}
-          className="w-5 h-5 rounded border-gray-300 text-indigo-500 focus:ring-indigo-400"
-        />
-        <span className="text-sm text-gray-700">이번 달 매주 반복</span>
-      </label>
+      {!editLesson && (
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={recurring}
+            onChange={(e) => setRecurring(e.target.checked)}
+            className="w-5 h-5 rounded border-gray-300 text-indigo-500 focus:ring-indigo-400"
+          />
+          <span className="text-sm text-gray-700">이번 달 매주 반복</span>
+        </label>
+      )}
 
       <div className="flex gap-3 pt-2">
         <button
@@ -246,7 +281,7 @@ export function ChoreoLessonForm({ date, onSubmit, onCancel }: ChoreoLessonFormP
           disabled={!studentId || !levelId || (!choreoId && !newChoreoTitle.trim())}
           className="flex-1 py-2.5 text-sm rounded-lg bg-purple-500 text-white hover:bg-purple-600 disabled:bg-gray-300 min-h-[44px]"
         >
-          추가
+          {editLesson ? '수정' : '추가'}
         </button>
       </div>
     </form>

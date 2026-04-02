@@ -11,7 +11,7 @@ import { ConfirmDialog } from '../ui/ConfirmDialog'
 interface StudentDetailProps {
   student: Student
   onBack: () => void
-  onUpdate: (id: string, data: Partial<Pick<Student, 'name' | 'phone' | 'memo'>>) => void
+  onUpdate: (id: string, data: Partial<Pick<Student, 'name' | 'teamId' | 'phone' | 'memo'>>) => void
   onDelete: (id: string) => void
 }
 
@@ -127,11 +127,11 @@ export function StudentDetail({ student, onBack, onUpdate, onDelete }: StudentDe
       </div>
 
       {showEdit && (
-        <Modal title="학생 수정" onClose={() => setShowEdit(false)}>
+        <Modal title="선수 수정" onClose={() => setShowEdit(false)}>
           <StudentForm
             student={student}
-            onSubmit={(name, phone, memo) => {
-              onUpdate(student.id, { name, phone, memo })
+            onSubmit={(name, teamId, phone, memo) => {
+              onUpdate(student.id, { name, teamId, phone, memo })
               setShowEdit(false)
             }}
             onCancel={() => setShowEdit(false)}
@@ -141,7 +141,7 @@ export function StudentDetail({ student, onBack, onUpdate, onDelete }: StudentDe
 
       {showDeleteConfirm && (
         <ConfirmDialog
-          message={`${student.name} 학생을 삭제하시겠습니까? 관련된 모든 레슨과 정산 기록이 함께 삭제됩니다.`}
+          message={`${student.name} 선수를 삭제하시겠습니까? 관련된 모든 레슨과 정산 기록이 함께 삭제됩니다.`}
           onConfirm={() => {
             onDelete(student.id)
             setShowDeleteConfirm(false)

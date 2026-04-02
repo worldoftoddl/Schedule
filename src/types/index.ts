@@ -1,6 +1,15 @@
+export interface Team {
+  id: string
+  name: string
+  sortOrder: number
+  createdAt: Date
+  updatedAt: Date
+}
+
 export interface Student {
   id: string
   name: string
+  teamId: string
   phone?: string
   memo?: string
   createdAt: Date

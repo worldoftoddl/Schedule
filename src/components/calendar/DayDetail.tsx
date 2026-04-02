@@ -4,12 +4,14 @@ import { useCalendarStore } from '../../stores/useCalendarStore'
 import { db } from '../../db/schema'
 import { formatDate } from '../../utils/format'
 import { TimeLessonCard, ChoreoLessonCard } from './LessonCard'
+import type { Lesson } from '../../types'
 
 interface DayDetailProps {
   onAddLesson: () => void
+  onEditLesson: (lesson: Lesson) => void
 }
 
-export function DayDetail({ onAddLesson }: DayDetailProps) {
+export function DayDetail({ onAddLesson, onEditLesson }: DayDetailProps) {
   const { selectedDate } = useCalendarStore()
 
   const timeLessons = useLiveQuery(
@@ -42,10 +44,12 @@ export function DayDetail({ onAddLesson }: DayDetailProps) {
 
   const handleDeleteTime = async (id: string) => {
     await db.timeLessons.delete(id)
+    await db.payments.where('lessonId').equals(id).delete()
   }
 
   const handleDeleteChoreo = async (id: string) => {
     await db.choreoLessons.delete(id)
+    await db.payments.where('lessonId').equals(id).delete()
   }
 
   const hasLessons =
@@ -75,6 +79,7 @@ export function DayDetail({ onAddLesson }: DayDetailProps) {
               key={lesson.id}
               lesson={lesson}
               students={students ?? []}
+              onEdit={(l) => onEditLesson(l)}
               onDelete={handleDeleteTime}
             />
           ))}
@@ -89,6 +94,7 @@ export function DayDetail({ onAddLesson }: DayDetailProps) {
                 studentName={student?.name ?? '?'}
                 levelName={level?.name ?? '?'}
                 choreoTitle={choreo?.title}
+                onEdit={(l) => onEditLesson(l)}
                 onDelete={handleDeleteChoreo}
               />
             )

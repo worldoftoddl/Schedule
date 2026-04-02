@@ -8,11 +8,12 @@ export function useStudents() {
     db.students.orderBy('name').toArray()
   )
 
-  const addStudent = async (name: string, phone?: string, memo?: string) => {
+  const addStudent = async (name: string, teamId: string, phone?: string, memo?: string) => {
     const now = new Date()
     const student: Student = {
       id: generateId(),
       name,
+      teamId,
       phone: phone || undefined,
       memo: memo || undefined,
       createdAt: now,
@@ -24,7 +25,7 @@ export function useStudents() {
 
   const updateStudent = async (
     id: string,
-    data: Partial<Pick<Student, 'name' | 'phone' | 'memo'>>
+    data: Partial<Pick<Student, 'name' | 'teamId' | 'phone' | 'memo'>>
   ) => {
     await db.students.update(id, { ...data, updatedAt: new Date() })
   }

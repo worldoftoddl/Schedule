@@ -1,21 +1,26 @@
 import { useState } from 'react'
+import { useLiveQuery } from 'dexie-react-hooks'
+import { db } from '../../db/schema'
 import type { Student } from '../../types'
 
 interface StudentFormProps {
   student?: Student
-  onSubmit: (name: string, phone?: string, memo?: string) => void
+  onSubmit: (name: string, teamId: string, phone?: string, memo?: string) => void
   onCancel: () => void
 }
 
 export function StudentForm({ student, onSubmit, onCancel }: StudentFormProps) {
   const [name, setName] = useState(student?.name ?? '')
+  const [teamId, setTeamId] = useState(student?.teamId ?? '')
   const [phone, setPhone] = useState(student?.phone ?? '')
   const [memo, setMemo] = useState(student?.memo ?? '')
 
+  const teams = useLiveQuery(() => db.teams.orderBy('sortOrder').toArray())
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!name.trim()) return
-    onSubmit(name.trim(), phone.trim() || undefined, memo.trim() || undefined)
+    if (!name.trim() || !teamId) return
+    onSubmit(name.trim(), teamId, phone.trim() || undefined, memo.trim() || undefined)
   }
 
   return (
@@ -29,10 +34,26 @@ export function StudentForm({ student, onSubmit, onCancel }: StudentFormProps) {
           value={name}
           onChange={(e) => setName(e.target.value)}
           className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400"
-          placeholder="학생 이름"
+          placeholder="선수 이름"
           autoFocus
           required
         />
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          팀 <span className="text-red-400">*</span>
+        </label>
+        <select
+          value={teamId}
+          onChange={(e) => setTeamId(e.target.value)}
+          className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white"
+          required
+        >
+          <option value="">팀 선택</option>
+          {teams?.map((t) => (
+            <option key={t.id} value={t.id}>{t.name}</option>
+          ))}
+        </select>
       </div>
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -68,7 +89,7 @@ export function StudentForm({ student, onSubmit, onCancel }: StudentFormProps) {
         </button>
         <button
           type="submit"
-          disabled={!name.trim()}
+          disabled={!name.trim() || !teamId}
           className="flex-1 py-2.5 text-sm rounded-lg bg-indigo-500 text-white hover:bg-indigo-600 disabled:bg-gray-300 min-h-[44px]"
         >
           {student ? '수정' : '추가'}

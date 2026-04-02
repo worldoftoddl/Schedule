@@ -3,7 +3,7 @@ import { Calendar, Users, Receipt, Settings } from 'lucide-react'
 
 const navItems = [
   { to: '/calendar', label: '캘린더', icon: Calendar },
-  { to: '/students', label: '학생', icon: Users },
+  { to: '/students', label: '선수', icon: Users },
   { to: '/settlement', label: '정산', icon: Receipt },
   { to: '/settings', label: '설정', icon: Settings },
 ] as const
