@@ -1,0 +1,154 @@
+import { useState } from 'react'
+import { useLiveQuery } from 'dexie-react-hooks'
+import { ArrowLeft, Edit2, Trash2 } from 'lucide-react'
+import type { Student } from '../../types'
+import { db } from '../../db/schema'
+import { formatDate, formatCurrency } from '../../utils/format'
+import { Modal } from '../ui/Modal'
+import { StudentForm } from './StudentForm'
+import { ConfirmDialog } from '../ui/ConfirmDialog'
+
+interface StudentDetailProps {
+  student: Student
+  onBack: () => void
+  onUpdate: (id: string, data: Partial<Pick<Student, 'name' | 'phone' | 'memo'>>) => void
+  onDelete: (id: string) => void
+}
+
+export function StudentDetail({ student, onBack, onUpdate, onDelete }: StudentDetailProps) {
+  const [showEdit, setShowEdit] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+
+  const timeLessons = useLiveQuery(
+    () => db.timeLessons.toArray().then((all) =>
+      all.filter((l) => l.studentIds.includes(student.id)).sort((a, b) => b.date.localeCompare(a.date))
+    ),
+    [student.id]
+  )
+
+  const choreoLessons = useLiveQuery(
+    () => db.choreoLessons.where('studentId').equals(student.id).sortBy('date').then((arr) => arr.reverse()),
+    [student.id]
+  )
+
+  const levels = useLiveQuery(() => db.choreoLevels.toArray(), [])
+  const choreographies = useLiveQuery(
+    () => db.choreographies.where('studentId').equals(student.id).toArray(),
+    [student.id]
+  )
+
+  const allLessons = [
+    ...(timeLessons ?? []).map((l) => ({
+      date: l.date,
+      time: `${l.startTime}-${l.endTime}`,
+      type: '타임' as const,
+      amount: l.pricePerStudent,
+    })),
+    ...(choreoLessons ?? []).map((l) => ({
+      date: l.date,
+      time: `${l.startTime}-${l.endTime}`,
+      type: '안무' as const,
+      amount: l.price,
+    })),
+  ].sort((a, b) => b.date.localeCompare(a.date))
+
+  return (
+    <div>
+      <div className="px-4 py-3 flex items-center gap-3 border-b border-gray-100">
+        <button
+          onClick={onBack}
+          className="min-w-[44px] min-h-[44px] flex items-center justify-center -ml-2"
+        >
+          <ArrowLeft size={20} />
+        </button>
+        <div className="flex-1">
+          <h2 className="text-base font-semibold">{student.name}</h2>
+          {student.phone && <p className="text-xs text-gray-400">{student.phone}</p>}
+        </div>
+        <button
+          onClick={() => setShowEdit(true)}
+          className="min-w-[44px] min-h-[44px] flex items-center justify-center text-gray-400"
+        >
+          <Edit2 size={18} />
+        </button>
+        <button
+          onClick={() => setShowDeleteConfirm(true)}
+          className="min-w-[44px] min-h-[44px] flex items-center justify-center text-gray-400"
+        >
+          <Trash2 size={18} />
+        </button>
+      </div>
+
+      {student.memo && (
+        <p className="px-4 py-2 text-sm text-gray-500 bg-gray-50">{student.memo}</p>
+      )}
+
+      {(choreographies?.length ?? 0) > 0 && (
+        <div className="px-4 py-3 border-b border-gray-100">
+          <h3 className="text-sm font-medium text-gray-600 mb-2">진행 중인 안무</h3>
+          {choreographies?.filter((c) => c.status === 'in_progress').map((c) => {
+            const level = levels?.find((l) => l.id === c.levelId)
+            const sessions = choreoLessons?.filter((l) => l.choreoId === c.id) ?? []
+            const completedHours = sessions.reduce((sum, s) => sum + s.durationHours, 0)
+            return (
+              <div key={c.id} className="flex items-center justify-between py-1">
+                <span className="text-sm">{c.title} ({level?.name})</span>
+                <span className="text-xs text-purple-500">{completedHours}/{c.totalHours}시간</span>
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      <div className="px-4 py-3">
+        <h3 className="text-sm font-medium text-gray-600 mb-2">
+          수업 히스토리 ({allLessons.length}건)
+        </h3>
+        {allLessons.length === 0 ? (
+          <p className="text-sm text-gray-400 py-4 text-center">수업 기록이 없습니다</p>
+        ) : (
+          <div className="flex flex-col gap-1">
+            {allLessons.map((lesson, i) => (
+              <div key={i} className="flex items-center justify-between py-2 text-sm">
+                <div className="flex items-center gap-2">
+                  <span className={`text-xs px-1.5 py-0.5 rounded ${
+                    lesson.type === '타임' ? 'bg-blue-50 text-blue-500' : 'bg-purple-50 text-purple-500'
+                  }`}>
+                    {lesson.type}
+                  </span>
+                  <span className="text-gray-600">{formatDate(lesson.date)}</span>
+                  <span className="text-gray-400 text-xs">{lesson.time}</span>
+                </div>
+                <span className="font-medium">{formatCurrency(lesson.amount)}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {showEdit && (
+        <Modal title="학생 수정" onClose={() => setShowEdit(false)}>
+          <StudentForm
+            student={student}
+            onSubmit={(name, phone, memo) => {
+              onUpdate(student.id, { name, phone, memo })
+              setShowEdit(false)
+            }}
+            onCancel={() => setShowEdit(false)}
+          />
+        </Modal>
+      )}
+
+      {showDeleteConfirm && (
+        <ConfirmDialog
+          message={`${student.name} 학생을 삭제하시겠습니까? 관련된 모든 레슨과 정산 기록이 함께 삭제됩니다.`}
+          onConfirm={() => {
+            onDelete(student.id)
+            setShowDeleteConfirm(false)
+          }}
+          onCancel={() => setShowDeleteConfirm(false)}
+        />
+      )}
+    </div>
+  )
+}

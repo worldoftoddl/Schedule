@@ -1,0 +1,22 @@
+@import "tailwindcss";
+
+:root {
+  --color-primary: #6366f1;
+  --color-primary-light: #818cf8;
+  --color-primary-dark: #4f46e5;
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+html, body, #root {
+  height: 100dvh;
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Pretendard', 'Noto Sans KR', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overscroll-behavior: none;
+}
+
+input, select, textarea {
+  font-size: 16px; /* Prevents iOS zoom on focus */
+}
