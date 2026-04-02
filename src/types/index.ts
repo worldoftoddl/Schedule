@@ -62,19 +62,38 @@ export interface ChoreoLevel {
   sortOrder: number
 }
 
+export interface TimeLessonLevel {
+  id: string
+  name: string
+  pricePerHour: number
+  sortOrder: number
+}
+
 export interface Payment {
   id: string
   studentId: string
   month: string // YYYY-MM
   amount: number
   date: string // YYYY-MM-DD
+  lessonId: string
+  lessonType: LessonType
   memo?: string
   createdAt: Date
+}
+
+export interface LessonSettlement {
+  lessonId: string
+  lessonType: LessonType
+  date: string
+  description: string
+  amount: number
+  paid: boolean
 }
 
 export interface StudentSettlement {
   studentId: string
   studentName: string
+  lessons: LessonSettlement[]
   timeLessonCount: number
   timeLessonTotal: number
   choreoLessonCount: number

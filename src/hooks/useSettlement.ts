@@ -1,6 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db/schema'
-import type { MonthlySettlement, StudentSettlement } from '../types'
+import type { TimeLesson, ChoreoLesson, Payment, MonthlySettlement, StudentSettlement } from '../types'
 
 export function useSettlement(month: string) {
   const timeLessons = useLiveQuery(
@@ -30,17 +30,19 @@ export function useSettlement(month: string) {
 
 function computeSettlement(
   month: string,
-  timeLessons: { studentIds: string[]; pricePerStudent: number }[],
-  choreoLessons: { studentId: string; price: number }[],
+  timeLessons: TimeLesson[],
+  choreoLessons: ChoreoLesson[],
   students: { id: string; name: string }[],
-  payments: { studentId: string; amount: number }[]
+  payments: Payment[]
 ): MonthlySettlement {
+  const paidKeys = new Set(payments.map((p) => `${p.lessonId}:${p.studentId}`))
   const map = new Map<string, StudentSettlement>()
 
   for (const s of students) {
     map.set(s.id, {
       studentId: s.id,
       studentName: s.name,
+      lessons: [],
       timeLessonCount: 0,
       timeLessonTotal: 0,
       choreoLessonCount: 0,
@@ -57,6 +59,18 @@ function computeSettlement(
       if (entry) {
         entry.timeLessonCount++
         entry.timeLessonTotal += lesson.pricePerStudent
+        const paid = paidKeys.has(`${lesson.id}:${sid}`)
+        entry.lessons.push({
+          lessonId: lesson.id,
+          lessonType: 'time',
+          date: lesson.date,
+          description: `타임 ${lesson.startTime}~${lesson.endTime}`,
+          amount: lesson.pricePerStudent,
+          paid,
+        })
+        if (paid) {
+          entry.paidAmount += lesson.pricePerStudent
+        }
       }
     }
   }
@@ -66,13 +80,18 @@ function computeSettlement(
     if (entry) {
       entry.choreoLessonCount++
       entry.choreoLessonTotal += lesson.price
-    }
-  }
-
-  for (const payment of payments) {
-    const entry = map.get(payment.studentId)
-    if (entry) {
-      entry.paidAmount += payment.amount
+      const paid = paidKeys.has(`${lesson.id}:${lesson.studentId}`)
+      entry.lessons.push({
+        lessonId: lesson.id,
+        lessonType: 'choreo',
+        date: lesson.date,
+        description: `안무 ${lesson.startTime}~${lesson.endTime}`,
+        amount: lesson.price,
+        paid,
+      })
+      if (paid) {
+        entry.paidAmount += lesson.price
+      }
     }
   }
 
@@ -82,6 +101,7 @@ function computeSettlement(
   for (const entry of map.values()) {
     entry.totalAmount = entry.timeLessonTotal + entry.choreoLessonTotal
     entry.outstandingAmount = entry.totalAmount - entry.paidAmount
+    entry.lessons.sort((a, b) => a.date.localeCompare(b.date))
     totalIncome += entry.totalAmount
     totalOutstanding += entry.outstandingAmount
   }

@@ -93,22 +93,34 @@ export function useLessons() {
     if (deleteAll) {
       const lesson = await db.timeLessons.get(id)
       if (lesson?.recurringGroupId) {
+        const lessons = await db.timeLessons.where('recurringGroupId').equals(lesson.recurringGroupId).toArray()
+        const ids = lessons.map((l) => l.id)
         await db.timeLessons.where('recurringGroupId').equals(lesson.recurringGroupId).delete()
+        for (const lid of ids) {
+          await db.payments.where('lessonId').equals(lid).delete()
+        }
         return
       }
     }
     await db.timeLessons.delete(id)
+    await db.payments.where('lessonId').equals(id).delete()
   }
 
   const deleteChoreoLesson = async (id: string, deleteAll = false) => {
     if (deleteAll) {
       const lesson = await db.choreoLessons.get(id)
       if (lesson?.recurringGroupId) {
+        const lessons = await db.choreoLessons.where('recurringGroupId').equals(lesson.recurringGroupId).toArray()
+        const ids = lessons.map((l) => l.id)
         await db.choreoLessons.where('recurringGroupId').equals(lesson.recurringGroupId).delete()
+        for (const lid of ids) {
+          await db.payments.where('lessonId').equals(lid).delete()
+        }
         return
       }
     }
     await db.choreoLessons.delete(id)
+    await db.payments.where('lessonId').equals(id).delete()
   }
 
   return { addTimeLesson, addChoreoLesson, deleteTimeLesson, deleteChoreoLesson }

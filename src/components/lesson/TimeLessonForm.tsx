@@ -21,12 +21,22 @@ interface TimeLessonFormProps {
 export function TimeLessonForm({ date, onSubmit, onCancel }: TimeLessonFormProps) {
   const [startTime, setStartTime] = useState('10:00')
   const [endTime, setEndTime] = useState('11:00')
+  const [levelId, setLevelId] = useState('')
   const [totalPrice, setTotalPrice] = useState('')
   const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([])
   const [memo, setMemo] = useState('')
   const [recurring, setRecurring] = useState(false)
 
   const students = useLiveQuery(() => db.students.orderBy('name').toArray())
+  const timeLevels = useLiveQuery(() => db.timeLessonLevels.orderBy('sortOrder').toArray())
+
+  const handleLevelChange = (id: string) => {
+    setLevelId(id)
+    const level = timeLevels?.find((l) => l.id === id)
+    if (level) {
+      setTotalPrice(String(level.pricePerHour))
+    }
+  }
 
   const price = Number(totalPrice) || 0
   const perStudent = splitPrice(price, selectedStudentIds.length)
@@ -45,7 +55,7 @@ export function TimeLessonForm({ date, onSubmit, onCancel }: TimeLessonFormProps
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (selectedStudentIds.length === 0 || price <= 0) return
+    if (selectedStudentIds.length === 0 || !levelId || price <= 0) return
     onSubmit({
       date,
       startTime,
@@ -83,17 +93,19 @@ export function TimeLessonForm({ date, onSubmit, onCancel }: TimeLessonFormProps
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">
-          총 레슨비 (원) <span className="text-red-400">*</span>
+          레슨 항목 <span className="text-red-400">*</span>
         </label>
-        <input
-          type="number"
-          inputMode="numeric"
-          value={totalPrice}
-          onChange={(e) => setTotalPrice(e.target.value)}
-          className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400"
-          placeholder="100000"
+        <select
+          value={levelId}
+          onChange={(e) => handleLevelChange(e.target.value)}
+          className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white"
           required
-        />
+        >
+          <option value="">항목 선택</option>
+          {timeLevels?.map((l) => (
+            <option key={l.id} value={l.id}>{l.name} — {formatCurrency(l.pricePerHour)}/시간</option>
+          ))}
+        </select>
         {selectedStudentIds.length > 1 && price > 0 && (
           <p className="text-xs text-indigo-500 mt-1">
             1인당 {formatCurrency(perStudent)}
@@ -158,7 +170,7 @@ export function TimeLessonForm({ date, onSubmit, onCancel }: TimeLessonFormProps
         </button>
         <button
           type="submit"
-          disabled={selectedStudentIds.length === 0 || price <= 0}
+          disabled={selectedStudentIds.length === 0 || !levelId || price <= 0}
           className="flex-1 py-2.5 text-sm rounded-lg bg-indigo-500 text-white hover:bg-indigo-600 disabled:bg-gray-300 min-h-[44px]"
         >
           추가

@@ -17,7 +17,7 @@ export function Modal({ title, children, onClose }: ModalProps) {
   }, [onClose])
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+    <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
       <div className="relative bg-white w-full max-w-lg rounded-t-2xl sm:rounded-2xl max-h-[85dvh] flex flex-col"
         style={{ paddingBottom: 'var(--safe-area-bottom)' }}>
@@ -30,7 +30,7 @@ export function Modal({ title, children, onClose }: ModalProps) {
             <X size={20} />
           </button>
         </div>
-        <div className="overflow-y-auto p-4">{children}</div>
+        <div className="overflow-y-auto p-4 pb-8">{children}</div>
       </div>
     </div>
   )

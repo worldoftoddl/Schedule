@@ -1,17 +1,14 @@
 import { useState } from 'react'
-import { ChevronLeft, ChevronRight, Banknote, AlertCircle } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Banknote, AlertCircle, Check } from 'lucide-react'
 import { useSettlement } from '../../hooks/useSettlement'
 import { usePayments } from '../../hooks/usePayments'
-import { formatCurrency, getMonthKey } from '../../utils/format'
-import { PaymentModal } from './PaymentModal'
-import type { StudentSettlement } from '../../types'
+import { formatCurrency, formatDate, getMonthKey } from '../../utils/format'
 
 export function SettlementView() {
   const [date, setDate] = useState(new Date())
   const month = getMonthKey(date)
   const settlement = useSettlement(month)
-  const { addPayment } = usePayments()
-  const [paymentTarget, setPaymentTarget] = useState<StudentSettlement | null>(null)
+  const { toggleLessonPayment } = usePayments()
 
   const navigateMonth = (dir: 'prev' | 'next') => {
     setDate((prev) => {
@@ -60,61 +57,58 @@ export function SettlementView() {
           {settlement.studentSummaries.length === 0 ? (
             <p className="text-center text-gray-400 text-sm py-8">이번 달 수업 기록이 없습니다</p>
           ) : (
-            <div className="px-4 flex flex-col gap-2">
+            <div className="px-4 flex flex-col gap-3">
               {settlement.studentSummaries.map((s) => (
-                <div key={s.studentId} className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-medium">{s.studentName}</span>
-                    <button
-                      onClick={() => setPaymentTarget(s)}
-                      className="text-xs px-2 py-1 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 min-h-[32px]"
-                    >
-                      결제 등록
-                    </button>
-                  </div>
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
-                    {s.timeLessonCount > 0 && (
-                      <>
-                        <span className="text-gray-500">타임 {s.timeLessonCount}회</span>
-                        <span className="text-right">{formatCurrency(s.timeLessonTotal)}</span>
-                      </>
-                    )}
-                    {s.choreoLessonCount > 0 && (
-                      <>
-                        <span className="text-gray-500">안무 {s.choreoLessonCount}회</span>
-                        <span className="text-right">{formatCurrency(s.choreoLessonTotal)}</span>
-                      </>
-                    )}
-                    <span className="text-gray-700 font-medium pt-1 border-t border-gray-100">합계</span>
-                    <span className="text-right font-medium pt-1 border-t border-gray-100">{formatCurrency(s.totalAmount)}</span>
-                    <span className="text-gray-500">결제</span>
-                    <span className="text-right text-green-600">{formatCurrency(s.paidAmount)}</span>
+                <div key={s.studentId} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                  <div className="px-4 py-3 border-b border-gray-50">
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium">{s.studentName}</span>
+                      <div className="text-xs text-gray-500">
+                        {formatCurrency(s.paidAmount)} / {formatCurrency(s.totalAmount)}
+                      </div>
+                    </div>
                     {s.outstandingAmount > 0 && (
-                      <>
-                        <span className="text-red-500 font-medium">미수금</span>
-                        <span className="text-right text-red-500 font-medium">{formatCurrency(s.outstandingAmount)}</span>
-                      </>
+                      <p className="text-xs text-red-500 mt-1">미수금 {formatCurrency(s.outstandingAmount)}</p>
                     )}
+                  </div>
+
+                  <div className="divide-y divide-gray-50">
+                    {s.lessons.map((lesson) => (
+                      <div
+                        key={lesson.lessonId}
+                        className="flex items-center justify-between px-4 py-2.5"
+                      >
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className={`inline-block w-1.5 h-1.5 rounded-full ${lesson.lessonType === 'time' ? 'bg-indigo-400' : 'bg-purple-400'}`} />
+                            <span className="text-sm text-gray-700 truncate">{formatDate(lesson.date)} {lesson.description}</span>
+                          </div>
+                          <span className="text-xs text-gray-500 ml-3.5">{formatCurrency(lesson.amount)}</span>
+                        </div>
+                        <button
+                          onClick={() => toggleLessonPayment({
+                            studentId: s.studentId,
+                            month,
+                            lessonId: lesson.lessonId,
+                            lessonType: lesson.lessonType,
+                            amount: lesson.amount,
+                          })}
+                          className={`ml-2 flex items-center justify-center w-8 h-8 rounded-full transition-colors ${
+                            lesson.paid
+                              ? 'bg-green-500 text-white'
+                              : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
+                          }`}
+                        >
+                          <Check size={16} />
+                        </button>
+                      </div>
+                    ))}
                   </div>
                 </div>
               ))}
             </div>
           )}
         </>
-      )}
-
-      {paymentTarget && (
-        <PaymentModal
-          studentId={paymentTarget.studentId}
-          studentName={paymentTarget.studentName}
-          month={month}
-          outstandingAmount={paymentTarget.outstandingAmount}
-          onSubmit={(data) => {
-            addPayment(data)
-            setPaymentTarget(null)
-          }}
-          onClose={() => setPaymentTarget(null)}
-        />
       )}
     </div>
   )
