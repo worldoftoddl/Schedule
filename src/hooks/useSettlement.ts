@@ -14,6 +14,7 @@ export function useSettlement(month: string) {
   )
 
   const students = useLiveQuery(() => db.students.toArray(), [])
+  const teams = useLiveQuery(() => db.teams.orderBy('sortOrder').toArray(), [])
 
   const payments = useLiveQuery(
     () => db.payments.where('month').equals(month).toArray(),
@@ -25,7 +26,7 @@ export function useSettlement(month: string) {
       ? computeSettlement(month, timeLessons, choreoLessons, students, payments)
       : null
 
-  return settlement
+  return { settlement, teams: teams ?? [], students: students ?? [] }
 }
 
 function computeSettlement(
