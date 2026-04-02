@@ -3,7 +3,7 @@ export function formatCurrency(amount: number): string {
 }
 
 export function formatDate(dateStr: string): string {
-  const [year, month, day] = dateStr.split('-')
+  const [_year, month, day] = dateStr.split('-')
   return `${Number(month)}월 ${Number(day)}일`
 }
 

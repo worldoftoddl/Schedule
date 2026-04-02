@@ -39,7 +39,7 @@ export function ChoreoLessonForm({ date, onSubmit, onCancel }: ChoreoLessonFormP
   const choreographies = useLiveQuery(
     () => studentId
       ? db.choreographies.where('studentId').equals(studentId).toArray()
-      : Promise.resolve([]),
+      : Promise.resolve([] as Choreography[]),
     [studentId]
   )
 
