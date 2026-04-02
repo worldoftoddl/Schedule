@@ -86,3 +86,43 @@ src/
 9. EDIT INTEGRITY: Before EVERY file edit, re-read the file. After editing, read it again to confirm.
 
 10. NO SEMANTIC SEARCH: When renaming any function/type/variable, search separately for: direct calls, type-level references, string literals, dynamic imports, re-exports, and test files.
+___
+
+## Changelog (2026-04-02)
+
+### v2 — 사용자 피드백 1차 반영
+
+- **타임레슨 가격 프리셋**: `TimeLessonLevel` 타입 + DB 테이블 추가, 설정에서 항목 CRUD, 폼에서 드롭다운 선택
+- **모달 버튼 가림 수정**: Modal z-index `z-[60]`으로 상향 (BottomNav `z-50` 위), 하단 패딩 `pb-8` 추가
+- **건당 정산**: Payment에 `lessonId`/`lessonType` 추가, 학생 단위 → 레슨 단위 결제 토글 방식으로 변경
+- **레슨 삭제 시 정산 연동**: 레슨 삭제 시 연결된 Payment도 cascade 삭제
+- DB 버전: v1 → v2 (payments에 lessonId 인덱스, timeLessonLevels 테이블)
+
+### v3 — 사용자 피드백 2차 반영
+
+- **레슨 수정 기능**: `updateTimeLesson()`, `updateChoreoLesson()` 추가, 레슨 카드에 편집 버튼, AddLessonModal 편집 모드
+- **학생 → 선수 명명 변경**: UI 문자열 14곳 변경 (코드 내부 타입명은 Student 유지)
+- **팀 구조**: `Team` 타입 + DB 테이블, 설정에서 팀 CRUD, 선수 등록 시 팀 선택, 레슨 추가 시 팀→선수 필터링
+- **레슨 시간 제약**: 시작시간 변경 시 종료시간 최소 +1시간 자동 보정, `min` 속성 적용
+- **안무 레슨 버그 수정**: 기존 안무 없는 선수에 `isNewChoreo` 자동 `true` 설정
+- **정산 뷰 모드**: 선수별 / 레슨별 / 팀별 3가지 보기 탭 추가
+- **안무 레슨 간소화**: 진행 중인 안무 선택 시 레벨/가격 자동 채움 (읽기 전용)
+- DB 버전: v2 → v3 (teams 테이블, students에 teamId 인덱스)
+
+### 현재 DB 스키마 (v3)
+
+| 테이블 | 인덱스 |
+|--------|--------|
+| teams | id, sortOrder |
+| students | id, name, teamId |
+| timeLessons | id, date, recurringGroupId, *studentIds |
+| choreoLessons | id, date, studentId, choreoId, levelId, recurringGroupId |
+| choreographies | id, studentId, levelId, status |
+| choreoLevels | id, sortOrder |
+| timeLessonLevels | id, sortOrder |
+| payments | id, studentId, month, date, lessonId, lessonType |
+
+### 배포
+
+- **Vercel**: https://schedule-pi-amber.vercel.app
+- **GitHub**: https://github.com/worldoftoddl/Schedule (master 브랜치 push 시 자동 배포)
