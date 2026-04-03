@@ -3,7 +3,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../../db/schema'
 import { useCalendarStore } from '../../stores/useCalendarStore'
 import { useBlockedTimes } from '../../hooks/useBlockedTimes'
-import { getWeekDates, buildDayTimeline, calcDaySummary } from '../../utils/availability'
+import { getWeekDates, buildDayTimeline } from '../../utils/availability'
 import { TimeSlot } from './TimeSlot'
 import { BlockedTimeForm } from './BlockedTimeForm'
 import { Modal } from '../ui/Modal'
@@ -138,8 +138,7 @@ export function WeeklyTimeline() {
       {/* Day summaries */}
       <div className="grid grid-cols-[40px_repeat(7,1fr)] border-b border-gray-200">
         <div /> {/* spacer for time labels */}
-        {dayTimelines.map(({ date, slots }) => {
-          const summary = calcDaySummary(date, slots)
+        {dayTimelines.map(({ date }) => {
           const dayOfWeek = new Date(date).getDay()
           const [, , d] = date.split('-')
           return (
@@ -152,7 +151,6 @@ export function WeeklyTimeline() {
             >
               <span className="font-medium">{DAY_LABELS[dayOfWeek]}</span>
               <span>{Number(d)}</span>
-              <span className="text-gray-400">{summary.freeSlots > 0 ? `${summary.freeSlots}빈` : ''}</span>
             </button>
           )
         })}
