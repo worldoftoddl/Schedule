@@ -3,7 +3,7 @@ import { generateId } from '../utils/id'
 import { splitPrice } from '../utils/format'
 import { expandWeeklyRecurring } from '../utils/recurring'
 import { useCalendarStore } from '../stores/useCalendarStore'
-import type { TimeLesson, ChoreoLesson } from '../types'
+import type { TimeLesson, ChoreoLesson, Choreography } from '../types'
 
 export function useLessons() {
   const { year, month } = useCalendarStore()
@@ -58,15 +58,33 @@ export function useLessons() {
     price: number
     memo?: string
     recurring: boolean
+    newChoreo?: { title: string; totalHours: number }
   }) => {
     const now = new Date()
+
+    let choreoId = data.choreoId
+    if (data.newChoreo) {
+      const choreo: Choreography = {
+        id: generateId(),
+        studentId: data.studentId,
+        levelId: data.levelId,
+        title: data.newChoreo.title,
+        totalHours: data.newChoreo.totalHours,
+        status: 'in_progress',
+        createdAt: now,
+        updatedAt: now,
+      }
+      await db.choreographies.add(choreo)
+      choreoId = choreo.id
+    }
+
     const base: Omit<ChoreoLesson, 'id' | 'date' | 'recurringGroupId'> = {
       type: 'choreo',
       startTime: data.startTime,
       endTime: data.endTime,
       durationHours: data.durationHours,
       studentId: data.studentId,
-      choreoId: data.choreoId,
+      choreoId,
       levelId: data.levelId,
       price: data.price,
       memo: data.memo,

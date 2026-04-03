@@ -42,9 +42,20 @@ export function useChoreographies() {
     }
   }
 
+  const deleteChoreography = async (id: string) => {
+    await db.choreographies.delete(id)
+    // 연결된 안무 레슨도 삭제
+    const lessons = await db.choreoLessons.where('choreoId').equals(id).toArray()
+    for (const lesson of lessons) {
+      await db.choreoLessons.delete(lesson.id)
+      await db.payments.where('lessonId').equals(lesson.id).delete()
+    }
+  }
+
   return {
     choreographies: choreographies ?? [],
     addChoreography,
+    deleteChoreography,
     getCompletedHours,
     updateStatus,
   }

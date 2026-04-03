@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../../db/schema'
 import { formatCurrency } from '../../utils/format'
-import { generateId } from '../../utils/id'
 import type { ChoreoLesson, Choreography } from '../../types'
 
 interface ChoreoLessonFormProps {
@@ -19,6 +18,7 @@ interface ChoreoLessonFormProps {
     price: number
     memo?: string
     recurring: boolean
+    newChoreo?: { title: string; totalHours: number }
   }) => void
   onCancel: () => void
 }
@@ -83,28 +83,11 @@ export function ChoreoLessonForm({ date, editLesson, onSubmit, onCancel }: Chore
     return Math.max(0, (eh * 60 + em - sh * 60 - sm) / 60)
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!studentId || !levelId) return
-
-    let finalChoreoId = choreoId
-    if (isNewChoreo && newChoreoTitle.trim()) {
-      const now = new Date()
-      const choreo: Choreography = {
-        id: generateId(),
-        studentId,
-        levelId,
-        title: newChoreoTitle.trim(),
-        totalHours: Number(newChoreoHours) || 5,
-        status: 'in_progress',
-        createdAt: now,
-        updatedAt: now,
-      }
-      await db.choreographies.add(choreo)
-      finalChoreoId = choreo.id
-    }
-
-    if (!finalChoreoId) return
+    if (!isNewChoreo && !choreoId) return
+    if (isNewChoreo && !newChoreoTitle.trim()) return
 
     onSubmit({
       date,
@@ -112,11 +95,12 @@ export function ChoreoLessonForm({ date, editLesson, onSubmit, onCancel }: Chore
       endTime,
       durationHours: calcDuration(),
       studentId,
-      choreoId: finalChoreoId,
+      choreoId: choreoId || '',
       levelId,
       price: selectedLevel?.price ?? 0,
       memo: memo.trim() || undefined,
       recurring,
+      newChoreo: isNewChoreo ? { title: newChoreoTitle.trim(), totalHours: Number(newChoreoHours) || 5 } : undefined,
     })
   }
 

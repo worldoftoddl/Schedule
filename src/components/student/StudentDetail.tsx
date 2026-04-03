@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { ArrowLeft, Edit2, Trash2 } from 'lucide-react'
-import type { Student } from '../../types'
+import { ArrowLeft, Edit2, Trash2, X } from 'lucide-react'
+import type { Student, Choreography } from '../../types'
 import { db } from '../../db/schema'
+import { useChoreographies } from '../../hooks/useChoreographies'
 import { formatDate, formatCurrency } from '../../utils/format'
 import { Modal } from '../ui/Modal'
 import { StudentForm } from './StudentForm'
@@ -18,6 +19,8 @@ interface StudentDetailProps {
 export function StudentDetail({ student, onBack, onUpdate, onDelete }: StudentDetailProps) {
   const [showEdit, setShowEdit] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [deleteChoreoTarget, setDeleteChoreoTarget] = useState<Choreography | null>(null)
+  const { deleteChoreography } = useChoreographies()
 
   const timeLessons = useLiveQuery(
     () => db.timeLessons.toArray().then((all) =>
@@ -93,7 +96,15 @@ export function StudentDetail({ student, onBack, onUpdate, onDelete }: StudentDe
             return (
               <div key={c.id} className="flex items-center justify-between py-1">
                 <span className="text-sm">{c.title} ({level?.name})</span>
-                <span className="text-xs text-purple-500">{completedHours}/{c.totalHours}시간</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-purple-500">{completedHours}/{c.totalHours}시간</span>
+                  <button
+                    onClick={() => setDeleteChoreoTarget(c)}
+                    className="p-1 text-gray-300 hover:text-red-400"
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
               </div>
             )
           })}
@@ -147,6 +158,17 @@ export function StudentDetail({ student, onBack, onUpdate, onDelete }: StudentDe
             setShowDeleteConfirm(false)
           }}
           onCancel={() => setShowDeleteConfirm(false)}
+        />
+      )}
+
+      {deleteChoreoTarget && (
+        <ConfirmDialog
+          message={`"${deleteChoreoTarget.title}" 안무를 삭제하시겠습니까? 연결된 안무 레슨도 함께 삭제됩니다.`}
+          onConfirm={() => {
+            deleteChoreography(deleteChoreoTarget.id)
+            setDeleteChoreoTarget(null)
+          }}
+          onCancel={() => setDeleteChoreoTarget(null)}
         />
       )}
     </div>
