@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../../db/schema'
-import { formatCurrency } from '../../utils/format'
+import { formatCurrency, calcTimes } from '../../utils/format'
 import type { ChoreoLesson, Choreography } from '../../types'
 
 interface ChoreoLessonFormProps {
@@ -77,12 +77,6 @@ export function ChoreoLessonForm({ date, editLesson, onSubmit, onCancel }: Chore
 
   const selectedLevel = levels?.find((l) => l.id === levelId)
 
-  const calcDuration = () => {
-    const [sh, sm] = startTime.split(':').map(Number)
-    const [eh, em] = endTime.split(':').map(Number)
-    return Math.max(0, (eh * 60 + em - sh * 60 - sm) / 60)
-  }
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!studentId || !levelId) return
@@ -93,7 +87,7 @@ export function ChoreoLessonForm({ date, editLesson, onSubmit, onCancel }: Chore
       date,
       startTime,
       endTime,
-      durationHours: calcDuration(),
+      durationHours: calcTimes(startTime, endTime),
       studentId,
       choreoId: choreoId || '',
       levelId,
@@ -200,7 +194,7 @@ export function ChoreoLessonForm({ date, editLesson, onSubmit, onCancel }: Chore
                 required
               />
               <div>
-                <label className="block text-xs text-gray-500 mb-1">총 시간</label>
+                <label className="block text-xs text-gray-500 mb-1">총 타임 수</label>
                 <input
                   type="number"
                   inputMode="numeric"

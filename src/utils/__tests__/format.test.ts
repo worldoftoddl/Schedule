@@ -6,6 +6,7 @@ import {
   getMonthKey,
   getDateKey,
   splitPrice,
+  calcTimes,
 } from '../format'
 
 describe('formatCurrency', () => {
@@ -73,5 +74,39 @@ describe('splitPrice', () => {
 
   it('returns full price for single student', () => {
     expect(splitPrice(80000, 1)).toBe(80000)
+  })
+})
+
+describe('calcTimes', () => {
+  it('50분 = 1타임', () => {
+    expect(calcTimes('10:00', '10:50')).toBe(1)
+  })
+
+  it('60분 = 1타임', () => {
+    expect(calcTimes('10:00', '11:00')).toBe(1)
+  })
+
+  it('80분 = 1.5타임', () => {
+    expect(calcTimes('10:00', '11:20')).toBe(1.5)
+  })
+
+  it('90분 = 1.5타임', () => {
+    expect(calcTimes('10:00', '11:30')).toBe(1.5)
+  })
+
+  it('110분 = 2타임', () => {
+    expect(calcTimes('10:00', '11:50')).toBe(2)
+  })
+
+  it('120분 = 2타임', () => {
+    expect(calcTimes('10:00', '12:00')).toBe(2)
+  })
+
+  it('23:00~23:50 = 1타임', () => {
+    expect(calcTimes('23:00', '23:50')).toBe(1)
+  })
+
+  it('최소 0.5타임 보장', () => {
+    expect(calcTimes('10:00', '10:10')).toBe(0.5)
   })
 })

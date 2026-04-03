@@ -33,3 +33,12 @@ export function splitPrice(totalPrice: number, count: number): number {
   if (count <= 0) return 0
   return Math.floor(totalPrice / count)
 }
+
+/** 시작/종료 시간으로 타임 수 계산 (0.5 단위 반올림, 50분~1시간 = 1타임) */
+export function calcTimes(startTime: string, endTime: string): number {
+  const [sh, sm] = startTime.split(':').map(Number)
+  const [eh, em] = endTime.split(':').map(Number)
+  const minutes = Math.max(0, (eh * 60 + em) - (sh * 60 + sm))
+  const times = Math.round(minutes / 30) / 2
+  return Math.max(0.5, times)
+}

@@ -111,7 +111,7 @@ export function StudentDetail({ student, onBack, onUpdate, onDelete }: StudentDe
               <div key={c.id} className="flex items-center justify-between py-1">
                 <span className="text-sm">{c.title} ({level?.name})</span>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-purple-500">{completedHours}/{c.totalHours}시간</span>
+                  <span className="text-xs text-purple-500">{completedHours}/{c.totalHours}타임</span>
                   <button
                     onClick={() => setDeleteChoreoTarget(c)}
                     className="p-1 text-gray-300 hover:text-red-400"

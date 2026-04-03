@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../../db/schema'
-import { splitPrice, formatCurrency } from '../../utils/format'
+import { splitPrice, formatCurrency, calcTimes } from '../../utils/format'
 import type { TimeLesson } from '../../types'
 
 interface TimeLessonFormProps {
@@ -55,12 +55,6 @@ export function TimeLessonForm({ date, editLesson, onSubmit, onCancel }: TimeLes
   const price = Number(totalPrice) || 0
   const perStudent = splitPrice(price, selectedStudentIds.length)
 
-  const calcDuration = () => {
-    const [sh, sm] = startTime.split(':').map(Number)
-    const [eh, em] = endTime.split(':').map(Number)
-    return Math.max(0, (eh * 60 + em - sh * 60 - sm) / 60)
-  }
-
   const toggleStudent = (id: string) => {
     setSelectedStudentIds((prev) =>
       prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]
@@ -74,7 +68,7 @@ export function TimeLessonForm({ date, editLesson, onSubmit, onCancel }: TimeLes
       date,
       startTime,
       endTime,
-      durationHours: calcDuration(),
+      durationHours: calcTimes(startTime, endTime),
       totalPrice: price,
       studentIds: selectedStudentIds,
       memo: memo.trim() || undefined,
@@ -123,7 +117,7 @@ export function TimeLessonForm({ date, editLesson, onSubmit, onCancel }: TimeLes
         >
           <option value="">항목 선택</option>
           {timeLevels?.map((l) => (
-            <option key={l.id} value={l.id}>{l.name} — {formatCurrency(l.pricePerHour)}/시간</option>
+            <option key={l.id} value={l.id}>{l.name} — {formatCurrency(l.pricePerHour)}/타임</option>
           ))}
         </select>
         {selectedStudentIds.length > 1 && price > 0 && (

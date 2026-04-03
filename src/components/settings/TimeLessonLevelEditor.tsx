@@ -96,7 +96,7 @@ export function TimeLessonLevelEditor() {
                   className="flex-1 text-left"
                 >
                   <span className="text-sm font-medium">{level.name}</span>
-                  <span className="text-sm text-gray-500 ml-2">{formatCurrency(level.pricePerHour)}/시간</span>
+                  <span className="text-sm text-gray-500 ml-2">{formatCurrency(level.pricePerHour)}/타임</span>
                 </button>
                 <button
                   onClick={() => setDeleteTarget(level)}

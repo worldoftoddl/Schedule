@@ -118,7 +118,7 @@ function computeSettlement(
         lessonId: choreo.id,
         lessonType: 'choreo',
         date: completionDate!,
-        description: `안무 "${choreo.title}" (${accumulated}/${choreo.totalHours}시간)`,
+        description: `안무 "${choreo.title}" (${accumulated}/${choreo.totalHours}타임)`,
         amount: choreoPrice,
         paid,
       })
