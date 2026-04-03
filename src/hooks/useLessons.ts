@@ -148,8 +148,8 @@ export function useLessons() {
     totalPrice: number
     studentIds: string[]
     memo?: string
-  }) => {
-    await db.timeLessons.update(id, {
+  }, updateAll = false) => {
+    const updates = {
       startTime: data.startTime,
       endTime: data.endTime,
       durationHours: data.durationHours,
@@ -158,7 +158,18 @@ export function useLessons() {
       pricePerStudent: splitPrice(data.totalPrice, data.studentIds.length),
       memo: data.memo,
       updatedAt: new Date(),
-    })
+    }
+    if (updateAll) {
+      const lesson = await db.timeLessons.get(id)
+      if (lesson?.recurringGroupId) {
+        const siblings = await db.timeLessons.where('recurringGroupId').equals(lesson.recurringGroupId).toArray()
+        for (const s of siblings) {
+          await db.timeLessons.update(s.id, updates)
+        }
+        return
+      }
+    }
+    await db.timeLessons.update(id, updates)
   }
 
   const updateChoreoLesson = async (id: string, data: {
@@ -170,8 +181,8 @@ export function useLessons() {
     levelId: string
     price: number
     memo?: string
-  }) => {
-    await db.choreoLessons.update(id, {
+  }, updateAll = false) => {
+    const updates = {
       startTime: data.startTime,
       endTime: data.endTime,
       durationHours: data.durationHours,
@@ -181,7 +192,18 @@ export function useLessons() {
       price: data.price,
       memo: data.memo,
       updatedAt: new Date(),
-    })
+    }
+    if (updateAll) {
+      const lesson = await db.choreoLessons.get(id)
+      if (lesson?.recurringGroupId) {
+        const siblings = await db.choreoLessons.where('recurringGroupId').equals(lesson.recurringGroupId).toArray()
+        for (const s of siblings) {
+          await db.choreoLessons.update(s.id, updates)
+        }
+        return
+      }
+    }
+    await db.choreoLessons.update(id, updates)
   }
 
   return { addTimeLesson, addChoreoLesson, updateTimeLesson, updateChoreoLesson, deleteTimeLesson, deleteChoreoLesson }

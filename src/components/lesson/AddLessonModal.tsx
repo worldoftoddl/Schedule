@@ -50,7 +50,7 @@ export function AddLessonModal({ date, editLesson, onClose }: AddLessonModalProp
           editLesson={editLesson?.type === 'time' ? editLesson : undefined}
           onSubmit={(data) => {
             if (editLesson?.type === 'time') {
-              updateTimeLesson(editLesson.id, data)
+              updateTimeLesson(editLesson.id, data, data.recurring)
             } else {
               addTimeLesson(data)
             }
@@ -64,7 +64,7 @@ export function AddLessonModal({ date, editLesson, onClose }: AddLessonModalProp
           editLesson={editLesson?.type === 'choreo' ? editLesson : undefined}
           onSubmit={(data) => {
             if (editLesson?.type === 'choreo') {
-              updateChoreoLesson(editLesson.id, data)
+              updateChoreoLesson(editLesson.id, data, data.recurring)
             } else {
               addChoreoLesson(data)
             }

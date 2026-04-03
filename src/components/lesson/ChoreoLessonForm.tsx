@@ -255,17 +255,17 @@ export function ChoreoLessonForm({ date, editLesson, onSubmit, onCancel }: Chore
         />
       </div>
 
-      {!editLesson && (
-        <label className="flex items-center gap-2 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={recurring}
-            onChange={(e) => setRecurring(e.target.checked)}
-            className="w-5 h-5 rounded border-gray-300 text-indigo-500 focus:ring-indigo-400"
-          />
-          <span className="text-sm text-gray-700">이번 달 매주 반복</span>
-        </label>
-      )}
+      <label className="flex items-center gap-2 cursor-pointer">
+        <input
+          type="checkbox"
+          checked={recurring}
+          onChange={(e) => setRecurring(e.target.checked)}
+          className="w-5 h-5 rounded border-gray-300 text-indigo-500 focus:ring-indigo-400"
+        />
+        <span className="text-sm text-gray-700">
+          {editLesson?.recurringGroupId ? '연동 레슨 모두 수정' : '이번 달 매주 반복'}
+        </span>
+      </label>
 
       <div className="flex gap-3 pt-2">
         <button
