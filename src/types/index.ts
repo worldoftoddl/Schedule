@@ -91,7 +91,7 @@ export interface Payment {
 }
 
 export interface LessonSettlement {
-  lessonId: string
+  lessonId: string // time lesson: lesson id, choreo: choreography id
   lessonType: LessonType
   date: string
   description: string

@@ -1,6 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db/schema'
-import type { TimeLesson, ChoreoLesson, Payment, MonthlySettlement, StudentSettlement } from '../types'
+import type { TimeLesson, ChoreoLesson, Choreography, Payment, MonthlySettlement, StudentSettlement } from '../types'
 
 export function useSettlement(month: string) {
   const timeLessons = useLiveQuery(
@@ -8,9 +8,15 @@ export function useSettlement(month: string) {
     [month]
   )
 
-  const choreoLessons = useLiveQuery(
-    () => db.choreoLessons.where('date').startsWith(month).toArray(),
-    [month]
+  // 안무는 월을 걸칠 수 있으므로 전체를 가져옴
+  const allChoreoLessons = useLiveQuery(
+    () => db.choreoLessons.toArray(),
+    []
+  )
+
+  const choreographies = useLiveQuery(
+    () => db.choreographies.toArray(),
+    []
   )
 
   const students = useLiveQuery(() => db.students.orderBy('name').toArray(), [])
@@ -22,8 +28,8 @@ export function useSettlement(month: string) {
   )
 
   const settlement: MonthlySettlement | null =
-    timeLessons && choreoLessons && students && payments
-      ? computeSettlement(month, timeLessons, choreoLessons, students, payments)
+    timeLessons && allChoreoLessons && choreographies && students && payments
+      ? computeSettlement(month, timeLessons, allChoreoLessons, choreographies, students, payments)
       : null
 
   return { settlement, teams: teams ?? [], students: students ?? [] }
@@ -32,7 +38,8 @@ export function useSettlement(month: string) {
 function computeSettlement(
   month: string,
   timeLessons: TimeLesson[],
-  choreoLessons: ChoreoLesson[],
+  allChoreoLessons: ChoreoLesson[],
+  choreographies: Choreography[],
   students: { id: string; name: string }[],
   payments: Payment[]
 ): MonthlySettlement {
@@ -54,6 +61,7 @@ function computeSettlement(
     })
   }
 
+  // 타임 레슨: 기존과 동일 (이번 달 레슨만)
   for (const lesson of timeLessons) {
     for (const sid of lesson.studentIds) {
       const entry = map.get(sid)
@@ -76,22 +84,46 @@ function computeSettlement(
     }
   }
 
-  for (const lesson of choreoLessons) {
-    const entry = map.get(lesson.studentId)
+  // 안무: choreography 단위로 정산 — 시간이 채워지는 달에 한 번만
+  for (const choreo of choreographies) {
+    const lessons = allChoreoLessons
+      .filter((l) => l.choreoId === choreo.id)
+      .sort((a, b) => a.date.localeCompare(b.date) || a.startTime.localeCompare(b.startTime))
+
+    if (lessons.length === 0) continue
+
+    // 누적 시간 계산 → 완료 시점 찾기
+    let accumulated = 0
+    let completionDate: string | null = null
+    for (const l of lessons) {
+      accumulated += l.durationHours
+      if (accumulated >= choreo.totalHours) {
+        completionDate = l.date
+        break
+      }
+    }
+
+    // 정산 대상 달 결정: 완료되었으면 완료된 달, 미완료면 아직 정산 안 함
+    const settlementMonth = completionDate ? completionDate.slice(0, 7) : null
+    if (settlementMonth !== month) continue
+
+    const entry = map.get(choreo.studentId)
     if (entry) {
       entry.choreoLessonCount++
-      entry.choreoLessonTotal += lesson.price
-      const paid = paidKeys.has(`${lesson.id}:${lesson.studentId}`)
+      entry.choreoLessonTotal += choreo.totalHours > 0 ? lessons[0].price : 0
+      // 안무 가격 = 최초 레슨 생성 시 복사된 레벨 가격 (전체 안무 가격)
+      const choreoPrice = lessons[0].price
+      const paid = paidKeys.has(`${choreo.id}:${choreo.studentId}`)
       entry.lessons.push({
-        lessonId: lesson.id,
+        lessonId: choreo.id,
         lessonType: 'choreo',
-        date: lesson.date,
-        description: `안무 ${lesson.startTime}~${lesson.endTime}`,
-        amount: lesson.price,
+        date: completionDate!,
+        description: `안무 "${choreo.title}" (${accumulated}/${choreo.totalHours}시간)`,
+        amount: choreoPrice,
         paid,
       })
       if (paid) {
-        entry.paidAmount += lesson.price
+        entry.paidAmount += choreoPrice
       }
     }
   }
