@@ -20,6 +20,8 @@ export function StudentDetail({ student, onBack, onUpdate, onDelete }: StudentDe
   const [showEdit, setShowEdit] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [deleteChoreoTarget, setDeleteChoreoTarget] = useState<Choreography | null>(null)
+  const [filterMonth, setFilterMonth] = useState('')
+  const [filterChoreoId, setFilterChoreoId] = useState('')
   const { deleteChoreography } = useChoreographies()
 
   const timeLessons = useLiveQuery(
@@ -46,14 +48,26 @@ export function StudentDetail({ student, onBack, onUpdate, onDelete }: StudentDe
       time: `${l.startTime}-${l.endTime}`,
       type: '타임' as const,
       amount: l.pricePerStudent,
+      choreoId: undefined as string | undefined,
     })),
     ...(choreoLessons ?? []).map((l) => ({
       date: l.date,
       time: `${l.startTime}-${l.endTime}`,
       type: '안무' as const,
       amount: l.price,
+      choreoId: l.choreoId,
     })),
   ].sort((a, b) => b.date.localeCompare(a.date) || a.time.localeCompare(b.time))
+
+  // 고유 월 목록 (최신순)
+  const months = [...new Set(allLessons.map((l) => l.date.slice(0, 7)))].sort((a, b) => b.localeCompare(a))
+
+  const filteredLessons = allLessons.filter((l) => {
+    if (filterMonth && !l.date.startsWith(filterMonth)) return false
+    if (filterChoreoId === '_time' && l.type !== '타임') return false
+    if (filterChoreoId && filterChoreoId !== '_time' && l.choreoId !== filterChoreoId) return false
+    return true
+  })
 
   return (
     <div>
@@ -112,14 +126,43 @@ export function StudentDetail({ student, onBack, onUpdate, onDelete }: StudentDe
       )}
 
       <div className="px-4 py-3">
-        <h3 className="text-sm font-medium text-gray-600 mb-2">
-          수업 히스토리 ({allLessons.length}건)
-        </h3>
-        {allLessons.length === 0 ? (
-          <p className="text-sm text-gray-400 py-4 text-center">수업 기록이 없습니다</p>
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-sm font-medium text-gray-600">
+            수업 히스토리 ({filteredLessons.length}건)
+          </h3>
+        </div>
+        {allLessons.length > 0 && (
+          <div className="flex gap-2 mb-3">
+            <select
+              value={filterMonth}
+              onChange={(e) => setFilterMonth(e.target.value)}
+              className="flex-1 px-2 py-1.5 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white"
+            >
+              <option value="">전체 월</option>
+              {months.map((m) => (
+                <option key={m} value={m}>{m.replace('-', '년 ')}월</option>
+              ))}
+            </select>
+            <select
+              value={filterChoreoId}
+              onChange={(e) => setFilterChoreoId(e.target.value)}
+              className="flex-1 px-2 py-1.5 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white"
+            >
+              <option value="">전체 유형</option>
+              <option value="_time">타임 레슨</option>
+              {choreographies?.map((c) => (
+                <option key={c.id} value={c.id}>안무: {c.title}</option>
+              ))}
+            </select>
+          </div>
+        )}
+        {filteredLessons.length === 0 ? (
+          <p className="text-sm text-gray-400 py-4 text-center">
+            {allLessons.length === 0 ? '수업 기록이 없습니다' : '해당하는 수업이 없습니다'}
+          </p>
         ) : (
           <div className="flex flex-col gap-1">
-            {allLessons.map((lesson, i) => (
+            {filteredLessons.map((lesson, i) => (
               <div key={i} className="flex items-center justify-between py-2 text-sm">
                 <div className="flex items-center gap-2">
                   <span className={`text-xs px-1.5 py-0.5 rounded ${
