@@ -16,9 +16,9 @@ function timeToMin(t: string): number {
 }
 
 const DAY_START = '06:00'
-const DAY_END = '23:00'
+const DAY_END = '24:00'
 const DAY_LABELS = ['일', '월', '화', '수', '목', '금', '토'] as const
-const HOURS = Array.from({ length: 17 }, (_, i) => i + 6) // 6~22
+const HOURS = Array.from({ length: 18 }, (_, i) => i + 6) // 6~23
 
 export function WeeklyTimeline() {
   const { year, month, weekIndex, selectDate, setViewMode } = useCalendarStore()
