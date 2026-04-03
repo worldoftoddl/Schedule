@@ -61,24 +61,60 @@ function computeSettlement(
     })
   }
 
-  // 타임 레슨: 기존과 동일 (이번 달 레슨만)
+  // 선수 미배정 레슨용 가상 엔트리
+  const UNASSIGNED_ID = '__unassigned__'
+
+  // 타임 레슨
   for (const lesson of timeLessons) {
-    for (const sid of lesson.studentIds) {
-      const entry = map.get(sid)
-      if (entry) {
-        entry.timeLessonCount++
-        entry.timeLessonTotal += lesson.pricePerStudent
-        const paid = paidKeys.has(`${lesson.id}:${sid}`)
-        entry.lessons.push({
-          lessonId: lesson.id,
-          lessonType: 'time',
-          date: lesson.date,
-          description: `타임 ${lesson.startTime}~${lesson.endTime}`,
-          amount: lesson.pricePerStudent,
-          paid,
+    if (lesson.studentIds.length === 0) {
+      // 선수 미배정 레슨
+      if (!map.has(UNASSIGNED_ID)) {
+        map.set(UNASSIGNED_ID, {
+          studentId: UNASSIGNED_ID,
+          studentName: '선수 미배정',
+          lessons: [],
+          timeLessonCount: 0,
+          timeLessonTotal: 0,
+          choreoLessonCount: 0,
+          choreoLessonTotal: 0,
+          totalAmount: 0,
+          paidAmount: 0,
+          outstandingAmount: 0,
         })
-        if (paid) {
-          entry.paidAmount += lesson.pricePerStudent
+      }
+      const entry = map.get(UNASSIGNED_ID)!
+      entry.timeLessonCount++
+      entry.timeLessonTotal += lesson.totalPrice
+      const paid = paidKeys.has(`${lesson.id}:${UNASSIGNED_ID}`)
+      entry.lessons.push({
+        lessonId: lesson.id,
+        lessonType: 'time',
+        date: lesson.date,
+        description: `타임 ${lesson.startTime}~${lesson.endTime}`,
+        amount: lesson.totalPrice,
+        paid,
+      })
+      if (paid) {
+        entry.paidAmount += lesson.totalPrice
+      }
+    } else {
+      for (const sid of lesson.studentIds) {
+        const entry = map.get(sid)
+        if (entry) {
+          entry.timeLessonCount++
+          entry.timeLessonTotal += lesson.pricePerStudent
+          const paid = paidKeys.has(`${lesson.id}:${sid}`)
+          entry.lessons.push({
+            lessonId: lesson.id,
+            lessonType: 'time',
+            date: lesson.date,
+            description: `타임 ${lesson.startTime}~${lesson.endTime}`,
+            amount: lesson.pricePerStudent,
+            paid,
+          })
+          if (paid) {
+            entry.paidAmount += lesson.pricePerStudent
+          }
         }
       }
     }
