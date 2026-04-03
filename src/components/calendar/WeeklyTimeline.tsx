@@ -100,9 +100,13 @@ export function WeeklyTimeline() {
     } else if (status === 'blocked') {
       // Find the blocked time that covers this slot
       const slotMin = timeToMin(slotTime)
-      const block = blockedTimes.find(
-        (b) => b.date === date && timeToMin(b.startTime) <= slotMin && timeToMin(b.endTime) > slotMin
-      )
+      const block = blockedTimes.find((b) => {
+        if (b.date !== date) return false
+        const bs = timeToMin(b.startTime)
+        let be = timeToMin(b.endTime)
+        if (be <= bs && be === 0) be = 1440
+        return bs <= slotMin && be > slotMin
+      })
       if (block) setDeleteTarget(block)
     }
   }

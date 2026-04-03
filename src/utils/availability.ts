@@ -64,7 +64,8 @@ export function buildDayTimeline(
 
     for (const l of lessons) {
       const ls = timeToMinutes(l.startTime)
-      const le = timeToMinutes(l.endTime)
+      let le = timeToMinutes(l.endTime)
+      if (le <= ls && le === 0) le = 1440 // 00:00 = 자정(24:00)
       if (ls < slotEnd && le > slotStart) {
         if (l.type === 'time') hasTime = true
         else hasChoreo = true
@@ -74,7 +75,8 @@ export function buildDayTimeline(
 
     for (const b of blocks) {
       const bs = timeToMinutes(b.startTime)
-      const be = timeToMinutes(b.endTime)
+      let be = timeToMinutes(b.endTime)
+      if (be <= bs && be === 0) be = 1440
       if (bs < slotEnd && be > slotStart) {
         hasBlock = true
         blockLabel = b.label

@@ -41,7 +41,10 @@ export function splitPrice(totalPrice: number, count: number): number {
 export function calcTimes(startTime: string, endTime: string): number {
   const [sh, sm] = startTime.split(':').map(Number)
   const [eh, em] = endTime.split(':').map(Number)
-  const minutes = Math.max(0, (eh * 60 + em) - (sh * 60 + sm))
+  let endMin = eh * 60 + em
+  const startMin = sh * 60 + sm
+  if (endMin <= startMin && endMin === 0) endMin = 1440 // 00:00 = 자정(24:00)
+  const minutes = Math.max(0, endMin - startMin)
   if (minutes < 50) {
     return Math.round(minutes / 50 * 100) / 100
   }

@@ -112,6 +112,23 @@ describe('buildDayTimeline', () => {
     expect(occupied[1].time).toBe('22:30')
   })
 
+  it('handles midnight-crossing lesson (22:00~00:00)', () => {
+    const lessons = [{ startTime: '22:00', endTime: '00:00', type: 'time' as const }]
+    const slots = buildDayTimeline(lessons, [], DAY_START, '24:00')
+    const occupied = slots.filter((s) => s.status === 'time')
+    // 22:00, 22:30, 23:00, 23:30 = 4 slots
+    expect(occupied).toHaveLength(4)
+    expect(occupied[0].time).toBe('22:00')
+    expect(occupied[3].time).toBe('23:30')
+  })
+
+  it('handles midnight-crossing blocked time', () => {
+    const blocks = [{ startTime: '23:00', endTime: '00:00', label: '정리' }]
+    const slots = buildDayTimeline([], blocks, DAY_START, '24:00')
+    const blocked = slots.filter((s) => s.status === 'blocked')
+    expect(blocked).toHaveLength(2) // 23:00, 23:30
+  })
+
   it('handles blocked + lesson overlap as overlap', () => {
     const lessons = [{ startTime: '12:00', endTime: '13:00', type: 'time' as const }]
     const blocks = [{ startTime: '12:00', endTime: '13:00', label: '점심' }]

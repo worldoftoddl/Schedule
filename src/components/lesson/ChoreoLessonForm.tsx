@@ -129,7 +129,7 @@ export function ChoreoLessonForm({ date, editLesson, onSubmit, onCancel }: Chore
               const val = e.target.value
               setStartTime(val)
               const minEnd = addMinutes(val, 5)
-              if (endTime < minEnd) setEndTime(minEnd)
+              if (endTime !== '00:00' && endTime < minEnd) setEndTime(minEnd)
             }}
             className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400"
           />
@@ -139,7 +139,6 @@ export function ChoreoLessonForm({ date, editLesson, onSubmit, onCancel }: Chore
           <input
             type="time"
             value={endTime}
-            min={addMinutes(startTime, 5)}
             onChange={(e) => setEndTime(e.target.value)}
             className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400"
           />

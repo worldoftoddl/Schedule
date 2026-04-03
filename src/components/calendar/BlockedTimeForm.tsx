@@ -58,7 +58,7 @@ export function BlockedTimeForm({ date, defaultStartTime, onSubmit, onCancel }: 
             onChange={(e) => {
               setStartTime(e.target.value)
               const minEnd = addMinutes(e.target.value, 30)
-              if (endTime < minEnd) setEndTime(minEnd)
+              if (endTime !== '00:00' && endTime < minEnd) setEndTime(minEnd)
             }}
             className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400"
           />
@@ -68,7 +68,6 @@ export function BlockedTimeForm({ date, defaultStartTime, onSubmit, onCancel }: 
           <input
             type="time"
             value={endTime}
-            min={addMinutes(startTime, 30)}
             onChange={(e) => setEndTime(e.target.value)}
             className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400"
           />
