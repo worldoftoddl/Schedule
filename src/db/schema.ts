@@ -1,5 +1,5 @@
 import Dexie, { type EntityTable } from 'dexie'
-import type { Team, Student, TimeLesson, ChoreoLesson, Choreography, ChoreoLevel, TimeLessonLevel, Payment } from '../types'
+import type { Team, Student, TimeLesson, ChoreoLesson, Choreography, ChoreoLevel, TimeLessonLevel, Payment, BlockedTime } from '../types'
 
 class LessonScheduleDB extends Dexie {
   teams!: EntityTable<Team, 'id'>
@@ -10,6 +10,7 @@ class LessonScheduleDB extends Dexie {
   choreoLevels!: EntityTable<ChoreoLevel, 'id'>
   timeLessonLevels!: EntityTable<TimeLessonLevel, 'id'>
   payments!: EntityTable<Payment, 'id'>
+  blockedTimes!: EntityTable<BlockedTime, 'id'>
 
   constructor() {
     super('LessonScheduleDB')
@@ -42,6 +43,18 @@ class LessonScheduleDB extends Dexie {
       choreoLevels: 'id, sortOrder',
       timeLessonLevels: 'id, sortOrder',
       payments: 'id, studentId, month, date, lessonId, lessonType',
+    })
+
+    this.version(4).stores({
+      teams: 'id, sortOrder',
+      students: 'id, name, teamId',
+      timeLessons: 'id, date, recurringGroupId, *studentIds',
+      choreoLessons: 'id, date, studentId, choreoId, levelId, recurringGroupId',
+      choreographies: 'id, studentId, levelId, status',
+      choreoLevels: 'id, sortOrder',
+      timeLessonLevels: 'id, sortOrder',
+      payments: 'id, studentId, month, date, lessonId, lessonType',
+      blockedTimes: 'id, date, recurringGroupId',
     })
   }
 }

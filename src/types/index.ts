@@ -118,3 +118,30 @@ export interface MonthlySettlement {
   totalIncome: number
   totalOutstanding: number
 }
+
+// --- Weekly Timeline (Availability View) ---
+
+export interface BlockedTime {
+  id: string
+  date: string // YYYY-MM-DD
+  startTime: string // HH:mm
+  endTime: string // HH:mm
+  label: string
+  recurringGroupId?: string
+  createdAt: Date
+  updatedAt: Date
+}
+
+export type SlotStatus = 'free' | 'time' | 'choreo' | 'blocked' | 'overlap'
+
+export interface TimeSlotData {
+  time: string // HH:mm (slot start)
+  status: SlotStatus
+  label?: string
+}
+
+export interface DaySummary {
+  date: string
+  lessonSlots: number
+  freeSlots: number
+}
