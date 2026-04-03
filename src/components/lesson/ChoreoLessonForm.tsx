@@ -23,10 +23,12 @@ interface ChoreoLessonFormProps {
   onCancel: () => void
 }
 
-function addOneHour(time: string): string {
+function addMinutes(time: string, mins: number): string {
   const [h, m] = time.split(':').map(Number)
-  const nh = Math.min(h + 1, 23)
-  return `${String(nh).padStart(2, '0')}:${String(m).padStart(2, '0')}`
+  const total = h * 60 + m + mins
+  const nh = Math.min(Math.floor(total / 60), 23)
+  const nm = total % 60
+  return `${String(nh).padStart(2, '0')}:${String(nm).padStart(2, '0')}`
 }
 
 export function ChoreoLessonForm({ date, editLesson, onSubmit, onCancel }: ChoreoLessonFormProps) {
@@ -109,7 +111,7 @@ export function ChoreoLessonForm({ date, editLesson, onSubmit, onCancel }: Chore
             onChange={(e) => {
               const val = e.target.value
               setStartTime(val)
-              const minEnd = addOneHour(val)
+              const minEnd = addMinutes(val, 5)
               if (endTime < minEnd) setEndTime(minEnd)
             }}
             className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400"
@@ -120,7 +122,7 @@ export function ChoreoLessonForm({ date, editLesson, onSubmit, onCancel }: Chore
           <input
             type="time"
             value={endTime}
-            min={addOneHour(startTime)}
+            min={addMinutes(startTime, 5)}
             onChange={(e) => setEndTime(e.target.value)}
             className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400"
           />

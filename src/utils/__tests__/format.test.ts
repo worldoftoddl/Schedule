@@ -106,7 +106,23 @@ describe('calcTimes', () => {
     expect(calcTimes('23:00', '23:50')).toBe(1)
   })
 
-  it('최소 0.5타임 보장', () => {
-    expect(calcTimes('10:00', '10:10')).toBe(0.5)
+  it('20분 = 0.4타임 (분/50)', () => {
+    expect(calcTimes('10:00', '10:20')).toBe(0.4)
+  })
+
+  it('10분 = 0.2타임 (분/50)', () => {
+    expect(calcTimes('10:00', '10:10')).toBe(0.2)
+  })
+
+  it('30분 = 0.6타임 (분/50)', () => {
+    expect(calcTimes('10:00', '10:30')).toBe(0.6)
+  })
+
+  it('45분 = 0.9타임 (분/50)', () => {
+    expect(calcTimes('10:00', '10:45')).toBe(0.9)
+  })
+
+  it('0분 = 0타임', () => {
+    expect(calcTimes('10:00', '10:00')).toBe(0)
   })
 })
