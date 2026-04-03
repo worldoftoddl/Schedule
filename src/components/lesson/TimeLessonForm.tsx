@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../../db/schema'
 import { splitPrice, formatCurrency, calcTimes } from '../../utils/format'
@@ -41,6 +41,19 @@ export function TimeLessonForm({ date, editLesson, onSubmit, onCancel }: TimeLes
   const teams = useLiveQuery(() => db.teams.orderBy('sortOrder').toArray())
   const students = useLiveQuery(() => db.students.orderBy('name').toArray())
   const timeLevels = useLiveQuery(() => db.timeLessonLevels.orderBy('sortOrder').toArray())
+
+  // 수정 모드: 선수의 teamId로 팀 필터 복원
+  useEffect(() => {
+    if (editLesson && students && students.length > 0 && !teamId) {
+      const firstStudentId = editLesson.studentIds[0]
+      if (firstStudentId) {
+        const student = students.find((s) => s.id === firstStudentId)
+        if (student?.teamId) {
+          setTeamId(student.teamId)
+        }
+      }
+    }
+  }, [editLesson, students]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const filteredStudents = teamId
     ? students?.filter((s) => s.teamId === teamId)
@@ -109,19 +122,30 @@ export function TimeLessonForm({ date, editLesson, onSubmit, onCancel }: TimeLes
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">
-          레슨 항목 <span className="text-red-400">*</span>
+          {editLesson ? '레슨비 (원)' : '레슨 항목'} <span className="text-red-400">*</span>
         </label>
-        <select
-          value={levelId}
-          onChange={(e) => handleLevelChange(e.target.value)}
-          className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white"
-          required
-        >
-          <option value="">항목 선택</option>
-          {timeLevels?.map((l) => (
-            <option key={l.id} value={l.id}>{l.name} — {formatCurrency(l.pricePerHour)}/타임</option>
-          ))}
-        </select>
+        {editLesson ? (
+          <input
+            type="number"
+            inputMode="numeric"
+            value={totalPrice}
+            onChange={(e) => setTotalPrice(e.target.value)}
+            className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400"
+            required
+          />
+        ) : (
+          <select
+            value={levelId}
+            onChange={(e) => handleLevelChange(e.target.value)}
+            className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white"
+            required
+          >
+            <option value="">항목 선택</option>
+            {timeLevels?.map((l) => (
+              <option key={l.id} value={l.id}>{l.name} — {formatCurrency(l.pricePerHour)}/타임</option>
+            ))}
+          </select>
+        )}
         {selectedStudentIds.length > 1 && price > 0 && (
           <p className="text-xs text-indigo-500 mt-1">
             1인당 {formatCurrency(perStudent)}

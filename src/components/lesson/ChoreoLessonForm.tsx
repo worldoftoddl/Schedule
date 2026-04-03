@@ -47,6 +47,16 @@ export function ChoreoLessonForm({ date, editLesson, onSubmit, onCancel }: Chore
   const teams = useLiveQuery(() => db.teams.orderBy('sortOrder').toArray())
   const allStudents = useLiveQuery(() => db.students.orderBy('name').toArray())
   const students = teamId ? allStudents?.filter((s) => s.teamId === teamId) : allStudents
+
+  // 수정 모드: 선수의 teamId로 팀 필터 복원
+  useEffect(() => {
+    if (editLesson && allStudents && allStudents.length > 0 && !teamId) {
+      const student = allStudents.find((s) => s.id === editLesson.studentId)
+      if (student?.teamId) {
+        setTeamId(student.teamId)
+      }
+    }
+  }, [editLesson, allStudents]) // eslint-disable-line react-hooks/exhaustive-deps
   const levels = useLiveQuery(() => db.choreoLevels.orderBy('sortOrder').toArray())
   const choreographies = useLiveQuery(
     () => studentId
