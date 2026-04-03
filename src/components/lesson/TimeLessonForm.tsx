@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../../db/schema'
-import { splitPrice, formatCurrency, calcTimes } from '../../utils/format'
+import { splitPrice, formatCurrency, calcTimes, getDateKey } from '../../utils/format'
+import { endOfMonth } from 'date-fns'
 import type { TimeLesson } from '../../types'
 
 interface TimeLessonFormProps {
@@ -16,6 +17,7 @@ interface TimeLessonFormProps {
     studentIds: string[]
     memo?: string
     recurring: boolean
+    recurringUntil?: string
   }) => void
   onCancel: () => void
 }
@@ -37,6 +39,10 @@ export function TimeLessonForm({ date, editLesson, onSubmit, onCancel }: TimeLes
   const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>(editLesson?.studentIds ?? [])
   const [memo, setMemo] = useState(editLesson?.memo ?? '')
   const [recurring, setRecurring] = useState(false)
+  const [recurringUntil, setRecurringUntil] = useState(() => {
+    const [y, m] = date.split('-').map(Number)
+    return getDateKey(endOfMonth(new Date(y, m - 1, 1)))
+  })
 
   const teams = useLiveQuery(() => db.teams.orderBy('sortOrder').toArray())
   const students = useLiveQuery(() => db.students.orderBy('name').toArray())
@@ -88,6 +94,7 @@ export function TimeLessonForm({ date, editLesson, onSubmit, onCancel }: TimeLes
       studentIds: selectedStudentIds,
       memo: memo.trim() || undefined,
       recurring,
+      recurringUntil: recurring ? recurringUntil : undefined,
     })
   }
 
@@ -212,9 +219,21 @@ export function TimeLessonForm({ date, editLesson, onSubmit, onCancel }: TimeLes
           className="w-5 h-5 rounded border-gray-300 text-indigo-500 focus:ring-indigo-400"
         />
         <span className="text-sm text-gray-700">
-          {editLesson?.recurringGroupId ? '연동 레슨 모두 수정' : '이번 달 매주 반복'}
+          {editLesson?.recurringGroupId ? '연동 레슨 모두 수정' : '매주 반복'}
         </span>
       </label>
+      {recurring && !editLesson?.recurringGroupId && (
+        <div>
+          <label className="block text-xs text-gray-500 mb-1">반복 종료일</label>
+          <input
+            type="date"
+            value={recurringUntil}
+            min={date}
+            onChange={(e) => setRecurringUntil(e.target.value)}
+            className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400"
+          />
+        </div>
+      )}
 
       <div className="flex gap-3 pt-2">
         <button

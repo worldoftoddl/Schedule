@@ -17,6 +17,7 @@ export function useLessons() {
     studentIds: string[]
     memo?: string
     recurring: boolean
+    recurringUntil?: string
   }) => {
     const now = new Date()
     const base: Omit<TimeLesson, 'id' | 'date' | 'recurringGroupId'> = {
@@ -33,7 +34,7 @@ export function useLessons() {
     }
 
     if (data.recurring) {
-      const { dates, recurringGroupId } = expandWeeklyRecurring(data.date, year, month)
+      const { dates, recurringGroupId } = expandWeeklyRecurring(data.date, year, month, data.recurringUntil)
       const lessons: TimeLesson[] = dates.map((date) => ({
         ...base,
         id: generateId(),
@@ -58,6 +59,7 @@ export function useLessons() {
     price: number
     memo?: string
     recurring: boolean
+    recurringUntil?: string
     newChoreo?: { title: string; totalHours: number }
   }) => {
     const now = new Date()
@@ -93,7 +95,7 @@ export function useLessons() {
     }
 
     if (data.recurring) {
-      const { dates, recurringGroupId } = expandWeeklyRecurring(data.date, year, month)
+      const { dates, recurringGroupId } = expandWeeklyRecurring(data.date, year, month, data.recurringUntil)
       const lessons: ChoreoLesson[] = dates.map((date) => ({
         ...base,
         id: generateId(),
@@ -148,6 +150,7 @@ export function useLessons() {
     totalPrice: number
     studentIds: string[]
     memo?: string
+    recurringUntil?: string
   }, updateAll = false) => {
     const updates = {
       startTime: data.startTime,
@@ -171,7 +174,7 @@ export function useLessons() {
       }
       if (lesson) {
         // 단일 레슨 → 반복으로 확장
-        const { dates, recurringGroupId } = expandWeeklyRecurring(lesson.date, year, month)
+        const { dates, recurringGroupId } = expandWeeklyRecurring(lesson.date, year, month, data.recurringUntil)
         await db.timeLessons.update(id, { ...updates, recurringGroupId })
         const newDates = dates.filter((d) => d !== lesson.date)
         if (newDates.length > 0) {
@@ -199,6 +202,7 @@ export function useLessons() {
     levelId: string
     price: number
     memo?: string
+    recurringUntil?: string
   }, updateAll = false) => {
     const updates = {
       startTime: data.startTime,
@@ -223,7 +227,7 @@ export function useLessons() {
       }
       if (lesson) {
         // 단일 레슨 → 반복으로 확장
-        const { dates, recurringGroupId } = expandWeeklyRecurring(lesson.date, year, month)
+        const { dates, recurringGroupId } = expandWeeklyRecurring(lesson.date, year, month, data.recurringUntil)
         await db.choreoLessons.update(id, { ...updates, recurringGroupId })
         const newDates = dates.filter((d) => d !== lesson.date)
         if (newDates.length > 0) {

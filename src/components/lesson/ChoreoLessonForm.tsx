@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../../db/schema'
-import { formatCurrency, calcTimes } from '../../utils/format'
+import { formatCurrency, calcTimes, getDateKey } from '../../utils/format'
+import { endOfMonth } from 'date-fns'
 import type { ChoreoLesson, Choreography } from '../../types'
 
 interface ChoreoLessonFormProps {
@@ -18,6 +19,7 @@ interface ChoreoLessonFormProps {
     price: number
     memo?: string
     recurring: boolean
+    recurringUntil?: string
     newChoreo?: { title: string; totalHours: number }
   }) => void
   onCancel: () => void
@@ -43,6 +45,10 @@ export function ChoreoLessonForm({ date, editLesson, onSubmit, onCancel }: Chore
   const [isNewChoreo, setIsNewChoreo] = useState(false)
   const [memo, setMemo] = useState(editLesson?.memo ?? '')
   const [recurring, setRecurring] = useState(false)
+  const [recurringUntil, setRecurringUntil] = useState(() => {
+    const [y, m] = date.split('-').map(Number)
+    return getDateKey(endOfMonth(new Date(y, m - 1, 1)))
+  })
 
   const teams = useLiveQuery(() => db.teams.orderBy('sortOrder').toArray())
   const allStudents = useLiveQuery(() => db.students.orderBy('name').toArray())
@@ -106,6 +112,7 @@ export function ChoreoLessonForm({ date, editLesson, onSubmit, onCancel }: Chore
       price: selectedLevel?.price ?? 0,
       memo: memo.trim() || undefined,
       recurring,
+      recurringUntil: recurring ? recurringUntil : undefined,
       newChoreo: isNewChoreo ? { title: newChoreoTitle.trim(), totalHours: Number(newChoreoHours) || 5 } : undefined,
     })
   }
@@ -273,9 +280,21 @@ export function ChoreoLessonForm({ date, editLesson, onSubmit, onCancel }: Chore
           className="w-5 h-5 rounded border-gray-300 text-indigo-500 focus:ring-indigo-400"
         />
         <span className="text-sm text-gray-700">
-          {editLesson?.recurringGroupId ? '연동 레슨 모두 수정' : '이번 달 매주 반복'}
+          {editLesson?.recurringGroupId ? '연동 레슨 모두 수정' : '매주 반복'}
         </span>
       </label>
+      {recurring && !editLesson?.recurringGroupId && (
+        <div>
+          <label className="block text-xs text-gray-500 mb-1">반복 종료일</label>
+          <input
+            type="date"
+            value={recurringUntil}
+            min={date}
+            onChange={(e) => setRecurringUntil(e.target.value)}
+            className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400"
+          />
+        </div>
+      )}
 
       <div className="flex gap-3 pt-2">
         <button
