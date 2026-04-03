@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../../db/schema'
 import { useCalendarStore } from '../../stores/useCalendarStore'
@@ -43,16 +43,39 @@ export function WeeklyTimeline() {
     [weekDates.join(',')]
   )
 
-  if (!timeLessons || !choreoLessons || !blockedTimes) return null
+  const students = useLiveQuery(() => db.students.toArray(), [])
+  const teams = useLiveQuery(() => db.teams.toArray(), [])
+
+  // studentId → 팀명 축약 (2글자) 매핑
+  const labelByStudentId = useMemo(() => {
+    if (!students || !teams) return new Map<string, string>()
+    const teamMap = new Map(teams.map((t) => [t.id, t.name]))
+    return new Map(students.map((s) => [
+      s.id,
+      s.teamId ? (teamMap.get(s.teamId)?.slice(0, 2) ?? s.name.slice(0, 2)) : s.name.slice(0, 2),
+    ]))
+  }, [students, teams])
+
+  if (!timeLessons || !choreoLessons || !blockedTimes || !students || !teams) return null
 
   // Build timeline for each day
   const dayTimelines: { date: string; slots: TimeSlotData[] }[] = weekDates.map((date) => {
     const dayTimeLessons = timeLessons
       .filter((l) => l.date === date)
-      .map((l) => ({ startTime: l.startTime, endTime: l.endTime, type: 'time' as const }))
+      .map((l) => {
+        const firstStudentId = l.studentIds[0]
+        const label = firstStudentId ? labelByStudentId.get(firstStudentId) ?? '' : ''
+        return {
+          startTime: l.startTime, endTime: l.endTime, type: 'time' as const,
+          lessonId: l.id, displayLabel: label,
+        }
+      })
     const dayChoreoLessons = choreoLessons
       .filter((l) => l.date === date)
-      .map((l) => ({ startTime: l.startTime, endTime: l.endTime, type: 'choreo' as const }))
+      .map((l) => ({
+        startTime: l.startTime, endTime: l.endTime, type: 'choreo' as const,
+        lessonId: l.id, displayLabel: labelByStudentId.get(l.studentId) ?? '',
+      }))
     const dayBlocks = blockedTimes
       .filter((b) => b.date === date)
       .map((b) => ({ startTime: b.startTime, endTime: b.endTime, label: b.label }))
@@ -155,7 +178,7 @@ export function WeeklyTimeline() {
                     onClick={() => handleSlotClick(date, slot.time, slot.status)}
                     className="cursor-pointer"
                   >
-                    <TimeSlot status={slot.status} label={slot.label} />
+                    <TimeSlot status={slot.status} label={slot.label} lessonMeta={slot.lessonMeta} />
                   </div>
                 )
               })}
@@ -170,7 +193,7 @@ export function WeeklyTimeline() {
                     onClick={() => handleSlotClick(date, slot.time, slot.status)}
                     className="cursor-pointer"
                   >
-                    <TimeSlot status={slot.status} label={slot.label} />
+                    <TimeSlot status={slot.status} label={slot.label} lessonMeta={slot.lessonMeta} />
                   </div>
                 )
               })}

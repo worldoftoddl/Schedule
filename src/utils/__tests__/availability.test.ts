@@ -121,6 +121,93 @@ describe('buildDayTimeline', () => {
   })
 })
 
+describe('buildDayTimeline lessonMeta', () => {
+  const DAY_START = '06:00'
+  const DAY_END = '23:00'
+
+  it('attaches lessonMeta with isStart on first slot', () => {
+    const lessons = [{
+      startTime: '10:00', endTime: '11:00', type: 'time' as const,
+      lessonId: 'L1', displayLabel: '주니',
+    }]
+    const slots = buildDayTimeline(lessons, [], DAY_START, DAY_END)
+    const s1 = slots.find((s) => s.time === '10:00')!
+    const s2 = slots.find((s) => s.time === '10:30')!
+
+    expect(s1.lessonMeta).toBeDefined()
+    expect(s1.lessonMeta!.isStart).toBe(true)
+    expect(s1.lessonMeta!.isContinuation).toBe(false)
+    expect(s1.lessonMeta!.displayLabel).toBe('주니')
+    expect(s1.lessonMeta!.lessonId).toBe('L1')
+
+    expect(s2.lessonMeta).toBeDefined()
+    expect(s2.lessonMeta!.isStart).toBe(false)
+    expect(s2.lessonMeta!.isContinuation).toBe(true)
+  })
+
+  it('does not attach lessonMeta to free slots', () => {
+    const lessons = [{
+      startTime: '10:00', endTime: '10:30', type: 'time' as const,
+      lessonId: 'L1', displayLabel: '주니',
+    }]
+    const slots = buildDayTimeline(lessons, [], DAY_START, DAY_END)
+    const free = slots.find((s) => s.time === '10:30')!
+    expect(free.status).toBe('free')
+    expect(free.lessonMeta).toBeUndefined()
+  })
+
+  it('works without lessonId/displayLabel (backward compat)', () => {
+    // Lessons without meta fields should still work (no lessonMeta on slots)
+    const lessons = [{ startTime: '10:00', endTime: '11:00', type: 'time' as const }]
+    const slots = buildDayTimeline(lessons, [], DAY_START, DAY_END)
+    const s1 = slots.find((s) => s.time === '10:00')!
+    expect(s1.status).toBe('time')
+    expect(s1.lessonMeta).toBeUndefined()
+  })
+
+  it('handles choreo lesson meta', () => {
+    const lessons = [{
+      startTime: '14:00', endTime: '15:00', type: 'choreo' as const,
+      lessonId: 'C1', displayLabel: '시니',
+    }]
+    const slots = buildDayTimeline(lessons, [], DAY_START, DAY_END)
+    const s1 = slots.find((s) => s.time === '14:00')!
+    expect(s1.lessonMeta!.type).toBe('choreo')
+    expect(s1.lessonMeta!.displayLabel).toBe('시니')
+  })
+
+  it('picks first lesson meta on overlap', () => {
+    const lessons = [
+      { startTime: '10:00', endTime: '11:00', type: 'time' as const, lessonId: 'L1', displayLabel: '주니' },
+      { startTime: '10:30', endTime: '11:30', type: 'choreo' as const, lessonId: 'C1', displayLabel: '시니' },
+    ]
+    const slots = buildDayTimeline(lessons, [], DAY_START, DAY_END)
+    const overlap = slots.find((s) => s.time === '10:30')!
+    expect(overlap.status).toBe('overlap')
+    // First matching lesson's meta
+    expect(overlap.lessonMeta).toBeDefined()
+    expect(overlap.lessonMeta!.lessonId).toBe('L1')
+  })
+
+  it('3-slot lesson has correct isStart/isContinuation', () => {
+    const lessons = [{
+      startTime: '10:00', endTime: '11:30', type: 'time' as const,
+      lessonId: 'L1', displayLabel: '주니',
+    }]
+    const slots = buildDayTimeline(lessons, [], DAY_START, DAY_END)
+    const s0 = slots.find((s) => s.time === '10:00')!
+    const s1 = slots.find((s) => s.time === '10:30')!
+    const s2 = slots.find((s) => s.time === '11:00')!
+
+    expect(s0.lessonMeta!.isStart).toBe(true)
+    expect(s0.lessonMeta!.isContinuation).toBe(false)
+    expect(s1.lessonMeta!.isStart).toBe(false)
+    expect(s1.lessonMeta!.isContinuation).toBe(true)
+    expect(s2.lessonMeta!.isStart).toBe(false)
+    expect(s2.lessonMeta!.isContinuation).toBe(true)
+  })
+})
+
 describe('calcDaySummary', () => {
   it('counts all free when no lessons', () => {
     const slots: TimeSlotData[] = Array.from({ length: 10 }, (_, i) => ({

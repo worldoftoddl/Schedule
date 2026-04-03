@@ -1,10 +1,12 @@
 import { getMonthGrid } from './calendar'
-import type { TimeSlotData, SlotStatus, DaySummary } from '../types'
+import type { TimeSlotData, SlotStatus, DaySummary, LessonSlotMeta } from '../types'
 
-interface LessonSlice {
+export interface LessonSlice {
   startTime: string
   endTime: string
   type: 'time' | 'choreo'
+  lessonId?: string
+  displayLabel?: string
 }
 
 interface BlockSlice {
@@ -47,6 +49,8 @@ export function buildDayTimeline(
   const endMin = timeToMinutes(dayEnd)
   const slots: TimeSlotData[] = []
 
+  let prevLessonId: string | undefined
+
   for (let m = startMin; m < endMin; m += 30) {
     const slotStart = m
     const slotEnd = m + 30
@@ -56,6 +60,7 @@ export function buildDayTimeline(
     let hasChoreo = false
     let hasBlock = false
     let blockLabel: string | undefined
+    let firstMatch: LessonSlice | undefined
 
     for (const l of lessons) {
       const ls = timeToMinutes(l.startTime)
@@ -63,6 +68,7 @@ export function buildDayTimeline(
       if (ls < slotEnd && le > slotStart) {
         if (l.type === 'time') hasTime = true
         else hasChoreo = true
+        if (!firstMatch) firstMatch = l
       }
     }
 
@@ -89,7 +95,30 @@ export function buildDayTimeline(
       status = 'free'
     }
 
-    slots.push({ time, status, label: hasBlock ? blockLabel : undefined })
+    // Build lessonMeta only if we have a matching lesson with id
+    let lessonMeta: LessonSlotMeta | undefined
+    if (firstMatch?.lessonId) {
+      const isStart = timeToMinutes(firstMatch.startTime) >= slotStart &&
+                      timeToMinutes(firstMatch.startTime) < slotEnd
+      lessonMeta = {
+        lessonId: firstMatch.lessonId,
+        type: firstMatch.type,
+        displayLabel: firstMatch.displayLabel ?? '',
+        startTime: firstMatch.startTime,
+        endTime: firstMatch.endTime,
+        isStart,
+        isContinuation: !isStart && prevLessonId === firstMatch.lessonId,
+      }
+    }
+
+    prevLessonId = firstMatch?.lessonId
+
+    slots.push({
+      time,
+      status,
+      label: hasBlock ? blockLabel : undefined,
+      lessonMeta,
+    })
   }
 
   return slots

@@ -134,10 +134,21 @@ export interface BlockedTime {
 
 export type SlotStatus = 'free' | 'time' | 'choreo' | 'blocked' | 'overlap'
 
+export interface LessonSlotMeta {
+  lessonId: string
+  type: 'time' | 'choreo'
+  displayLabel: string // 팀명 축약 등
+  startTime: string
+  endTime: string
+  isStart: boolean       // 이 레슨의 첫 슬롯
+  isContinuation: boolean // 이전 슬롯과 같은 레슨
+}
+
 export interface TimeSlotData {
   time: string // HH:mm (slot start)
   status: SlotStatus
   label?: string
+  lessonMeta?: LessonSlotMeta
 }
 
 export interface DaySummary {
