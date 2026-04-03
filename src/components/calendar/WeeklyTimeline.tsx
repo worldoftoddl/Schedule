@@ -7,7 +7,13 @@ import { getWeekDates, buildDayTimeline, calcDaySummary } from '../../utils/avai
 import { TimeSlot } from './TimeSlot'
 import { BlockedTimeForm } from './BlockedTimeForm'
 import { Modal } from '../ui/Modal'
-import type { TimeSlotData } from '../../types'
+import { ConfirmDialog } from '../ui/ConfirmDialog'
+import type { BlockedTime, TimeSlotData } from '../../types'
+
+function timeToMin(t: string): number {
+  const [h, m] = t.split(':').map(Number)
+  return h * 60 + m
+}
 
 const DAY_START = '06:00'
 const DAY_END = '23:00'
@@ -16,8 +22,9 @@ const HOURS = Array.from({ length: 17 }, (_, i) => i + 6) // 6~22
 
 export function WeeklyTimeline() {
   const { year, month, weekIndex, selectDate, setViewMode } = useCalendarStore()
-  const { addBlockedTime } = useBlockedTimes()
+  const { addBlockedTime, deleteBlockedTime } = useBlockedTimes()
   const [showBlockForm, setShowBlockForm] = useState<{ date: string; startTime?: string } | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<BlockedTime | null>(null)
 
   const weekDates = getWeekDates(year, month, weekIndex)
 
@@ -67,6 +74,13 @@ export function WeeklyTimeline() {
   const handleSlotClick = (date: string, slotTime: string, status: string) => {
     if (status === 'free') {
       setShowBlockForm({ date, startTime: slotTime })
+    } else if (status === 'blocked') {
+      // Find the blocked time that covers this slot
+      const slotMin = timeToMin(slotTime)
+      const block = blockedTimes.find(
+        (b) => b.date === date && timeToMin(b.startTime) <= slotMin && timeToMin(b.endTime) > slotMin
+      )
+      if (block) setDeleteTarget(block)
     }
   }
 
@@ -175,6 +189,27 @@ export function WeeklyTimeline() {
             onCancel={() => setShowBlockForm(null)}
           />
         </Modal>
+      )}
+
+      {/* Delete blocked time confirm */}
+      {deleteTarget && (
+        <ConfirmDialog
+          title="블록 시간 삭제"
+          message={`"${deleteTarget.label}" (${deleteTarget.startTime}~${deleteTarget.endTime})을 삭제할까요?${deleteTarget.recurringGroupId ? '\n\n반복된 블록을 모두 삭제하려면 "모두 삭제"를 선택하세요.' : ''}`}
+          confirmLabel={deleteTarget.recurringGroupId ? '이것만 삭제' : '삭제'}
+          onConfirm={async () => {
+            await deleteBlockedTime(deleteTarget.id)
+            setDeleteTarget(null)
+          }}
+          onCancel={() => setDeleteTarget(null)}
+          extraAction={deleteTarget.recurringGroupId ? {
+            label: '모두 삭제',
+            onClick: async () => {
+              await deleteBlockedTime(deleteTarget.id, true)
+              setDeleteTarget(null)
+            },
+          } : undefined}
+        />
       )}
     </div>
   )
