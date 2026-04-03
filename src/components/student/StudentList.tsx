@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { Plus, Search, ChevronRight } from 'lucide-react'
+import { Plus, Search, ChevronRight, Settings2 } from 'lucide-react'
 import type { Student } from '../../types'
 import { db } from '../../db/schema'
 import { Modal } from '../ui/Modal'
 import { StudentForm } from './StudentForm'
+import { TeamEditor } from '../settings/TeamEditor'
 
 interface StudentListProps {
   students: Student[]
@@ -14,6 +15,7 @@ interface StudentListProps {
 
 export function StudentList({ students, onAdd, onSelect }: StudentListProps) {
   const [showForm, setShowForm] = useState(false)
+  const [showTeamEditor, setShowTeamEditor] = useState(false)
   const [search, setSearch] = useState('')
 
   const teams = useLiveQuery(() => db.teams.orderBy('sortOrder').toArray())
@@ -45,6 +47,13 @@ export function StudentList({ students, onAdd, onSelect }: StudentListProps) {
             placeholder="선수 검색"
           />
         </div>
+        <button
+          onClick={() => setShowTeamEditor(true)}
+          className="px-3 py-2 border border-gray-200 text-gray-500 rounded-lg hover:bg-gray-50 min-w-[44px] min-h-[44px] flex items-center justify-center"
+          title="팀 관리"
+        >
+          <Settings2 size={18} />
+        </button>
         <button
           onClick={() => setShowForm(true)}
           className="px-3 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 min-w-[44px] min-h-[44px] flex items-center justify-center"
@@ -96,6 +105,12 @@ export function StudentList({ students, onAdd, onSelect }: StudentListProps) {
             }}
             onCancel={() => setShowForm(false)}
           />
+        </Modal>
+      )}
+
+      {showTeamEditor && (
+        <Modal title="팀 관리" onClose={() => setShowTeamEditor(false)}>
+          <TeamEditor />
         </Modal>
       )}
     </div>
