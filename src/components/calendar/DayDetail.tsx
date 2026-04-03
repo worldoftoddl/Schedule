@@ -17,7 +17,7 @@ export function DayDetail({ onAddLesson, onEditLesson }: DayDetailProps) {
   const timeLessons = useLiveQuery(
     () =>
       selectedDate
-        ? db.timeLessons.where('date').equals(selectedDate).toArray()
+        ? db.timeLessons.where('date').equals(selectedDate).sortBy('startTime')
         : [],
     [selectedDate]
   )
@@ -25,7 +25,7 @@ export function DayDetail({ onAddLesson, onEditLesson }: DayDetailProps) {
   const choreoLessons = useLiveQuery(
     () =>
       selectedDate
-        ? db.choreoLessons.where('date').equals(selectedDate).toArray()
+        ? db.choreoLessons.where('date').equals(selectedDate).sortBy('startTime')
         : [],
     [selectedDate]
   )

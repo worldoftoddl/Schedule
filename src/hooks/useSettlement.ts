@@ -13,7 +13,7 @@ export function useSettlement(month: string) {
     [month]
   )
 
-  const students = useLiveQuery(() => db.students.toArray(), [])
+  const students = useLiveQuery(() => db.students.orderBy('name').toArray(), [])
   const teams = useLiveQuery(() => db.teams.orderBy('sortOrder').toArray(), [])
 
   const payments = useLiveQuery(
@@ -102,7 +102,7 @@ function computeSettlement(
   for (const entry of map.values()) {
     entry.totalAmount = entry.timeLessonTotal + entry.choreoLessonTotal
     entry.outstandingAmount = entry.totalAmount - entry.paidAmount
-    entry.lessons.sort((a, b) => a.date.localeCompare(b.date))
+    entry.lessons.sort((a, b) => a.date.localeCompare(b.date) || a.description.localeCompare(b.description))
     totalIncome += entry.totalAmount
     totalOutstanding += entry.outstandingAmount
   }

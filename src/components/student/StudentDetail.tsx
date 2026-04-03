@@ -53,7 +53,7 @@ export function StudentDetail({ student, onBack, onUpdate, onDelete }: StudentDe
       type: '안무' as const,
       amount: l.price,
     })),
-  ].sort((a, b) => b.date.localeCompare(a.date))
+  ].sort((a, b) => b.date.localeCompare(a.date) || a.time.localeCompare(b.time))
 
   return (
     <div>
