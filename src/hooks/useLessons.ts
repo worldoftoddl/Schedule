@@ -162,9 +162,27 @@ export function useLessons() {
     if (updateAll) {
       const lesson = await db.timeLessons.get(id)
       if (lesson?.recurringGroupId) {
+        // 기존 반복 그룹 일괄 수정
         const siblings = await db.timeLessons.where('recurringGroupId').equals(lesson.recurringGroupId).toArray()
         for (const s of siblings) {
           await db.timeLessons.update(s.id, updates)
+        }
+        return
+      }
+      if (lesson) {
+        // 단일 레슨 → 반복으로 확장
+        const { dates, recurringGroupId } = expandWeeklyRecurring(lesson.date, year, month)
+        await db.timeLessons.update(id, { ...updates, recurringGroupId })
+        const newDates = dates.filter((d) => d !== lesson.date)
+        if (newDates.length > 0) {
+          const newLessons: TimeLesson[] = newDates.map((date) => ({
+            ...lesson,
+            ...updates,
+            id: generateId(),
+            date,
+            recurringGroupId,
+          }))
+          await db.timeLessons.bulkAdd(newLessons)
         }
         return
       }
@@ -196,9 +214,27 @@ export function useLessons() {
     if (updateAll) {
       const lesson = await db.choreoLessons.get(id)
       if (lesson?.recurringGroupId) {
+        // 기존 반복 그룹 일괄 수정
         const siblings = await db.choreoLessons.where('recurringGroupId').equals(lesson.recurringGroupId).toArray()
         for (const s of siblings) {
           await db.choreoLessons.update(s.id, updates)
+        }
+        return
+      }
+      if (lesson) {
+        // 단일 레슨 → 반복으로 확장
+        const { dates, recurringGroupId } = expandWeeklyRecurring(lesson.date, year, month)
+        await db.choreoLessons.update(id, { ...updates, recurringGroupId })
+        const newDates = dates.filter((d) => d !== lesson.date)
+        if (newDates.length > 0) {
+          const newLessons: ChoreoLesson[] = newDates.map((date) => ({
+            ...lesson,
+            ...updates,
+            id: generateId(),
+            date,
+            recurringGroupId,
+          }))
+          await db.choreoLessons.bulkAdd(newLessons)
         }
         return
       }
