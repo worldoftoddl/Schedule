@@ -45,10 +45,12 @@ export function TimeLessonCard({ lesson, students, onEdit, onDelete }: TimeLesso
       </div>
       <div className="mt-2 flex items-center gap-1 text-xs text-gray-500">
         <Users size={12} />
-        <span>{studentNames}</span>
-        <span className="ml-auto font-medium text-gray-700">
-          {formatCurrency(lesson.pricePerStudent)}/인
-        </span>
+        <span>{studentNames || '선수 미배정'}</span>
+        {lesson.studentIds.length > 0 && (
+          <span className="ml-auto font-medium text-gray-700">
+            {formatCurrency(lesson.pricePerStudent)}/인
+          </span>
+        )}
       </div>
     </div>
   )

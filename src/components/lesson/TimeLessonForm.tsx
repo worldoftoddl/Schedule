@@ -65,7 +65,7 @@ export function TimeLessonForm({ date, editLesson, onSubmit, onCancel }: TimeLes
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (selectedStudentIds.length === 0 || (!editLesson && !levelId) || price <= 0) return
+    if ((!editLesson && !levelId) || price <= 0) return
     onSubmit({
       date,
       startTime,
@@ -145,7 +145,7 @@ export function TimeLessonForm({ date, editLesson, onSubmit, onCancel }: TimeLes
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">
-          선수 선택 <span className="text-red-400">*</span>
+          선수 선택
         </label>
         {(!filteredStudents || filteredStudents.length === 0) ? (
           <p className="text-sm text-gray-400">먼저 선수를 추가해 주세요</p>
@@ -202,7 +202,7 @@ export function TimeLessonForm({ date, editLesson, onSubmit, onCancel }: TimeLes
         </button>
         <button
           type="submit"
-          disabled={selectedStudentIds.length === 0 || (!editLesson && !levelId) || price <= 0}
+          disabled={(!editLesson && !levelId) || price <= 0}
           className="flex-1 py-2.5 text-sm rounded-lg bg-indigo-500 text-white hover:bg-indigo-600 disabled:bg-gray-300 min-h-[44px]"
         >
           {editLesson ? '수정' : '추가'}
