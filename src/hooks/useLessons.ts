@@ -13,6 +13,7 @@ export function useLessons() {
     startTime: string
     endTime: string
     durationHours: number
+    baseDuration: number
     totalPrice: number
     studentIds: string[]
     memo?: string
@@ -25,6 +26,7 @@ export function useLessons() {
       startTime: data.startTime,
       endTime: data.endTime,
       durationHours: data.durationHours,
+      baseDuration: data.baseDuration,
       totalPrice: data.totalPrice,
       studentIds: data.studentIds,
       pricePerStudent: splitPrice(data.totalPrice, data.studentIds.length),
@@ -147,6 +149,7 @@ export function useLessons() {
     startTime: string
     endTime: string
     durationHours: number
+    baseDuration: number
     totalPrice: number
     studentIds: string[]
     memo?: string
@@ -156,6 +159,7 @@ export function useLessons() {
       startTime: data.startTime,
       endTime: data.endTime,
       durationHours: data.durationHours,
+      baseDuration: data.baseDuration,
       totalPrice: data.totalPrice,
       studentIds: data.studentIds,
       pricePerStudent: splitPrice(data.totalPrice, data.studentIds.length),

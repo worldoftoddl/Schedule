@@ -25,6 +25,7 @@ export interface TimeLesson {
   startTime: string // HH:mm
   endTime: string // HH:mm
   durationHours: number
+  baseDuration: number // 기준 시간 (분), 레벨에서 복사
   totalPrice: number
   studentIds: string[]
   pricePerStudent: number // computed: totalPrice / studentIds.length

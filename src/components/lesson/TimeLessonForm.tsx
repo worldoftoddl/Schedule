@@ -13,6 +13,7 @@ interface TimeLessonFormProps {
     startTime: string
     endTime: string
     durationHours: number
+    baseDuration: number
     totalPrice: number
     studentIds: string[]
     memo?: string
@@ -85,11 +86,13 @@ export function TimeLessonForm({ date, editLesson, onSubmit, onCancel }: TimeLes
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if ((!editLesson && !levelId) || price <= 0) return
+    const selectedLevel = timeLevels?.find((l) => l.id === levelId)
     onSubmit({
       date,
       startTime,
       endTime,
       durationHours: calcTimes(startTime, endTime),
+      baseDuration: editLesson?.baseDuration ?? selectedLevel?.baseDuration ?? 60,
       totalPrice: price,
       studentIds: selectedStudentIds,
       memo: memo.trim() || undefined,

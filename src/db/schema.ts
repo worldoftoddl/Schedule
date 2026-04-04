@@ -74,6 +74,24 @@ class LessonScheduleDB extends Dexie {
         }
       })
     })
+
+    this.version(6).stores({
+      teams: 'id, sortOrder',
+      students: 'id, name, teamId',
+      timeLessons: 'id, date, recurringGroupId, *studentIds',
+      choreoLessons: 'id, date, studentId, choreoId, levelId, recurringGroupId',
+      choreographies: 'id, studentId, levelId, status',
+      choreoLevels: 'id, sortOrder',
+      timeLessonLevels: 'id, sortOrder',
+      payments: 'id, studentId, month, date, lessonId, lessonType',
+      blockedTimes: 'id, date, recurringGroupId',
+    }).upgrade(tx => {
+      return tx.table('timeLessons').toCollection().modify(lesson => {
+        if (lesson.baseDuration === undefined) {
+          lesson.baseDuration = 60
+        }
+      })
+    })
   }
 }
 

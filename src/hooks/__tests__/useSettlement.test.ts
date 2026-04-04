@@ -8,6 +8,7 @@ const makeTimeLesson = (overrides: Partial<TimeLesson> & Pick<TimeLesson, 'id' |
   startTime: '10:00',
   endTime: '11:00',
   durationHours: 1,
+  baseDuration: 50,
   totalPrice: overrides.pricePerStudent * overrides.studentIds.length,
   memo: undefined,
   createdAt: new Date(),
@@ -122,6 +123,26 @@ describe('computeSettlement', () => {
     expect(s1.totalAmount).toBe(100000)
     expect(s1.paidAmount).toBe(100000)
     expect(s1.outstandingAmount).toBe(0)
+  })
+
+  it('includes baseDuration in time lesson description', () => {
+    const timeLessons = [
+      makeTimeLesson({ id: 't1', studentIds: ['s1'], pricePerStudent: 50000, baseDuration: 50 }),
+    ]
+
+    const result = computeSettlement('2026-04', timeLessons, [], [], students, [])
+    const s1 = result.studentSummaries.find((s) => s.studentId === 's1')!
+    expect(s1.lessons[0].description).toContain('50분')
+  })
+
+  it('shows baseDuration 60 for legacy lessons', () => {
+    const timeLessons = [
+      makeTimeLesson({ id: 't1', studentIds: ['s1'], pricePerStudent: 50000, baseDuration: 60 }),
+    ]
+
+    const result = computeSettlement('2026-04', timeLessons, [], [], students, [])
+    const s1 = result.studentSummaries.find((s) => s.studentId === 's1')!
+    expect(s1.lessons[0].description).toContain('60분')
   })
 
   it('excludes students with no lessons or payments', () => {

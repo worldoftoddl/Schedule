@@ -90,7 +90,7 @@ function computeSettlement(
         lessonId: lesson.id,
         lessonType: 'time',
         date: lesson.date,
-        description: `타임 ${lesson.startTime}~${lesson.endTime}`,
+        description: `타임 ${lesson.startTime}~${lesson.endTime} (${lesson.baseDuration ?? 60}분)`,
         amount: lesson.totalPrice,
         paid,
       })
@@ -108,7 +108,7 @@ function computeSettlement(
             lessonId: lesson.id,
             lessonType: 'time',
             date: lesson.date,
-            description: `타임 ${lesson.startTime}~${lesson.endTime}`,
+            description: `타임 ${lesson.startTime}~${lesson.endTime} (${lesson.baseDuration ?? 60}분)`,
             amount: lesson.pricePerStudent,
             paid,
           })
