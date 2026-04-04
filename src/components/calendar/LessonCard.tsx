@@ -61,6 +61,8 @@ interface ChoreoLessonCardProps {
   studentName: string
   levelName: string
   choreoTitle?: string
+  accumulatedHours?: number
+  totalHours?: number
   onEdit: (lesson: ChoreoLesson) => void
   onDelete: (id: string) => void
 }
@@ -70,6 +72,8 @@ export function ChoreoLessonCard({
   studentName,
   levelName,
   choreoTitle,
+  accumulatedHours,
+  totalHours,
   onEdit,
   onDelete,
 }: ChoreoLessonCardProps) {
@@ -86,6 +90,7 @@ export function ChoreoLessonCard({
             </div>
             <div className="text-xs text-gray-400">
               {lesson.startTime} - {lesson.endTime}
+              <span className="ml-1 text-purple-400">{lesson.durationHours}타임</span>
             </div>
           </div>
         </div>
@@ -107,6 +112,9 @@ export function ChoreoLessonCard({
       <div className="mt-2 text-xs text-gray-500">
         <span>{studentName}</span>
         {choreoTitle && <span className="ml-2 text-purple-400">#{choreoTitle}</span>}
+        {accumulatedHours != null && totalHours != null && (
+          <span className="ml-2 text-purple-500 font-medium">{accumulatedHours}/{totalHours}타임</span>
+        )}
         <span className="ml-auto float-right font-medium text-gray-700">
           {formatCurrency(lesson.price)}
         </span>

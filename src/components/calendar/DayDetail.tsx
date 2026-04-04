@@ -1,10 +1,11 @@
+import { useMemo } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { Plus } from 'lucide-react'
 import { useCalendarStore } from '../../stores/useCalendarStore'
 import { db } from '../../db/schema'
 import { formatDate } from '../../utils/format'
 import { TimeLessonCard, ChoreoLessonCard } from './LessonCard'
-import type { Lesson } from '../../types'
+import type { ChoreoLesson, Lesson } from '../../types'
 
 interface DayDetailProps {
   onAddLesson: () => void
@@ -33,6 +34,41 @@ export function DayDetail({ onAddLesson, onEditLesson }: DayDetailProps) {
   const students = useLiveQuery(() => db.students.toArray(), [])
   const levels = useLiveQuery(() => db.choreoLevels.toArray(), [])
   const choreographies = useLiveQuery(() => db.choreographies.toArray(), [])
+
+  // 진행률 계산을 위해 해당 choreoId들의 전체 레슨 조회
+  const choreoIds = useMemo(
+    () => [...new Set(choreoLessons?.map((l) => l.choreoId) ?? [])],
+    [choreoLessons]
+  )
+  const allChoreoLessonsForIds = useLiveQuery(
+    async () => {
+      if (choreoIds.length === 0) return [] as ChoreoLesson[]
+      return db.choreoLessons.where('choreoId').anyOf(choreoIds).sortBy('date')
+    },
+    [choreoIds.join(',')]
+  )
+
+  // choreoId별 현재 레슨까지의 누적 타임 계산
+  const accumulatedMap = useMemo(() => {
+    const map = new Map<string, number>() // key: lessonId -> accumulated hours up to this lesson
+    if (!allChoreoLessonsForIds) return map
+    const byChoreo = new Map<string, ChoreoLesson[]>()
+    for (const l of allChoreoLessonsForIds) {
+      const arr = byChoreo.get(l.choreoId) ?? []
+      arr.push(l)
+      byChoreo.set(l.choreoId, arr)
+    }
+    for (const [, lessons] of byChoreo) {
+      // date순 정렬 후 누적
+      lessons.sort((a, b) => a.date.localeCompare(b.date) || a.startTime.localeCompare(b.startTime))
+      let acc = 0
+      for (const l of lessons) {
+        acc += l.durationHours
+        map.set(l.id, acc)
+      }
+    }
+    return map
+  }, [allChoreoLessonsForIds])
 
   if (!selectedDate) {
     return (
@@ -94,6 +130,8 @@ export function DayDetail({ onAddLesson, onEditLesson }: DayDetailProps) {
                 studentName={student?.name ?? '?'}
                 levelName={level?.name ?? '?'}
                 choreoTitle={choreo?.title}
+                accumulatedHours={accumulatedMap.get(lesson.id)}
+                totalHours={choreo?.totalHours}
                 onEdit={(l) => onEditLesson(l)}
                 onDelete={handleDeleteChoreo}
               />
