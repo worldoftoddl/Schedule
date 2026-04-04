@@ -56,6 +56,24 @@ class LessonScheduleDB extends Dexie {
       payments: 'id, studentId, month, date, lessonId, lessonType',
       blockedTimes: 'id, date, recurringGroupId',
     })
+
+    this.version(5).stores({
+      teams: 'id, sortOrder',
+      students: 'id, name, teamId',
+      timeLessons: 'id, date, recurringGroupId, *studentIds',
+      choreoLessons: 'id, date, studentId, choreoId, levelId, recurringGroupId',
+      choreographies: 'id, studentId, levelId, status',
+      choreoLevels: 'id, sortOrder',
+      timeLessonLevels: 'id, sortOrder',
+      payments: 'id, studentId, month, date, lessonId, lessonType',
+      blockedTimes: 'id, date, recurringGroupId',
+    }).upgrade(tx => {
+      return tx.table('timeLessonLevels').toCollection().modify(level => {
+        if (level.baseDuration === undefined) {
+          level.baseDuration = 60
+        }
+      })
+    })
   }
 }
 

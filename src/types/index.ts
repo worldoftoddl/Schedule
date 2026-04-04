@@ -74,6 +74,7 @@ export interface ChoreoLevel {
 export interface TimeLessonLevel {
   id: string
   name: string
+  baseDuration: number // 기준 시간 (분), e.g. 50, 60
   pricePerHour: number
   sortOrder: number
 }

@@ -149,7 +149,7 @@ export function TimeLessonForm({ date, editLesson, onSubmit, onCancel }: TimeLes
           >
             <option value="">항목 선택</option>
             {timeLevels?.map((l) => (
-              <option key={l.id} value={l.id}>{l.name} — {formatCurrency(l.pricePerHour)}/타임</option>
+              <option key={l.id} value={l.id}>{l.name} — {l.baseDuration}분 {formatCurrency(l.pricePerHour)}</option>
             ))}
           </select>
         )}

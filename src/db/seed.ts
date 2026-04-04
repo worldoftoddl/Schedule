@@ -9,8 +9,8 @@ const DEFAULT_CHOREO_LEVELS: Omit<ChoreoLevel, 'id'>[] = [
 ]
 
 const DEFAULT_TIME_LEVELS: Omit<TimeLessonLevel, 'id'>[] = [
-  { name: '개인 레슨', pricePerHour: 50000, sortOrder: 1 },
-  { name: '그룹 레슨', pricePerHour: 30000, sortOrder: 2 },
+  { name: '개인 레슨', baseDuration: 50, pricePerHour: 50000, sortOrder: 1 },
+  { name: '그룹 레슨', baseDuration: 60, pricePerHour: 30000, sortOrder: 2 },
 ]
 
 export async function seedDefaultLevels(): Promise<void> {
