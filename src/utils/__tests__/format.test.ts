@@ -7,6 +7,7 @@ import {
   getDateKey,
   splitPrice,
   calcTimes,
+  calcStudentPrice,
 } from '../format'
 
 describe('formatCurrency', () => {
@@ -74,6 +75,38 @@ describe('splitPrice', () => {
 
   it('returns full price for single student', () => {
     expect(splitPrice(80000, 1)).toBe(80000)
+  })
+})
+
+describe('calcStudentPrice', () => {
+  it('배분 시간이 baseDuration과 같으면 totalPrice 그대로', () => {
+    // 50분 기준, 50분 배분 → 50,000원
+    expect(calcStudentPrice(50, 50, 50000)).toBe(50000)
+  })
+
+  it('배분 시간이 baseDuration보다 작으면 비례 감소', () => {
+    // 50분 기준 50,000원, 30분 배분 → 30,000원
+    expect(calcStudentPrice(30, 50, 50000)).toBe(30000)
+  })
+
+  it('배분 시간이 baseDuration보다 크면 비례 증가', () => {
+    // 50분 기준 50,000원, 100분 배분 → 100,000원
+    expect(calcStudentPrice(100, 50, 50000)).toBe(100000)
+  })
+
+  it('나누어떨어지지 않을 때 floor 처리', () => {
+    // 50분 기준 50,000원, 33분 배분 → 33,000원
+    expect(calcStudentPrice(33, 50, 50000)).toBe(33000)
+    // 60분 기준 70,000원, 40분 배분 → floor(40/60*70000) = floor(46666.67) = 46666
+    expect(calcStudentPrice(40, 60, 70000)).toBe(46666)
+  })
+
+  it('배분 0분이면 0원', () => {
+    expect(calcStudentPrice(0, 50, 50000)).toBe(0)
+  })
+
+  it('baseDuration 0이면 0원 (division by zero 방지)', () => {
+    expect(calcStudentPrice(30, 0, 50000)).toBe(0)
   })
 })
 

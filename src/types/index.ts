@@ -29,6 +29,7 @@ export interface TimeLesson {
   totalPrice: number
   studentIds: string[]
   pricePerStudent: number // computed: totalPrice / studentIds.length
+  studentAllocations?: Record<string, number> // studentId → 배분된 분(minutes), 없으면 1/n 균등
   recurringGroupId?: string
   memo?: string
   createdAt: Date

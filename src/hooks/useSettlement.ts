@@ -1,5 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db/schema'
+import { calcStudentPrice } from '../utils/format'
 import type { TimeLesson, ChoreoLesson, Choreography, Payment, MonthlySettlement, StudentSettlement } from '../types'
 
 export function useSettlement(month: string) {
@@ -102,18 +103,25 @@ function computeSettlement(
         const entry = map.get(sid)
         if (entry) {
           entry.timeLessonCount++
-          entry.timeLessonTotal += lesson.pricePerStudent
+          const allocation = lesson.studentAllocations?.[sid]
+          const amount = allocation != null
+            ? calcStudentPrice(allocation, lesson.baseDuration ?? 60, lesson.totalPrice)
+            : lesson.pricePerStudent
+          const desc = allocation != null
+            ? `타임 ${lesson.startTime}~${lesson.endTime} (${allocation}/${lesson.baseDuration ?? 60}분)`
+            : `타임 ${lesson.startTime}~${lesson.endTime} (${lesson.baseDuration ?? 60}분)`
+          entry.timeLessonTotal += amount
           const paid = paidKeys.has(`${lesson.id}:${sid}`)
           entry.lessons.push({
             lessonId: lesson.id,
             lessonType: 'time',
             date: lesson.date,
-            description: `타임 ${lesson.startTime}~${lesson.endTime} (${lesson.baseDuration ?? 60}분)`,
-            amount: lesson.pricePerStudent,
+            description: desc,
+            amount,
             paid,
           })
           if (paid) {
-            entry.paidAmount += lesson.pricePerStudent
+            entry.paidAmount += amount
           }
         }
       }

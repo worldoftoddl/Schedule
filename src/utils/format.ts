@@ -34,6 +34,12 @@ export function splitPrice(totalPrice: number, count: number): number {
   return Math.floor(totalPrice / count)
 }
 
+/** 선수별 배분 시간 기반 가격 계산 */
+export function calcStudentPrice(allocationMinutes: number, baseDuration: number, totalPrice: number): number {
+  if (baseDuration <= 0 || allocationMinutes <= 0) return 0
+  return Math.floor(allocationMinutes / baseDuration * totalPrice)
+}
+
 /** 시작/종료 시간으로 타임 수 계산
  * 50분 미만: 분/50 (소수점 둘째자리 반올림, 예: 20분 = 0.4타임)
  * 50분 이상: 0.5 단위 반올림 (50~60분 = 1타임, 80~90분 = 1.5타임)
