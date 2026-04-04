@@ -4,7 +4,7 @@ import { ArrowLeft, Edit2, Trash2, X } from 'lucide-react'
 import type { Student, Choreography } from '../../types'
 import { db } from '../../db/schema'
 import { useChoreographies } from '../../hooks/useChoreographies'
-import { formatDate, formatCurrency } from '../../utils/format'
+import { formatDate, formatCurrency, calcStudentPrice } from '../../utils/format'
 import { Modal } from '../ui/Modal'
 import { StudentForm } from './StudentForm'
 import { ConfirmDialog } from '../ui/ConfirmDialog'
@@ -43,19 +43,27 @@ export function StudentDetail({ student, onBack, onUpdate, onDelete }: StudentDe
   )
 
   const allLessons = [
-    ...(timeLessons ?? []).map((l) => ({
-      date: l.date,
-      time: `${l.startTime}-${l.endTime}`,
-      type: '타임' as const,
-      amount: l.pricePerStudent,
-      choreoId: undefined as string | undefined,
-    })),
+    ...(timeLessons ?? []).map((l) => {
+      const allocation = l.studentAllocations?.[student.id]
+      const amount = allocation != null
+        ? calcStudentPrice(allocation, l.baseDuration ?? 60, l.totalPrice)
+        : l.pricePerStudent
+      return {
+        date: l.date,
+        time: `${l.startTime}-${l.endTime}`,
+        type: '타임' as const,
+        amount,
+        choreoId: undefined as string | undefined,
+        allocated: allocation,
+      }
+    }),
     ...(choreoLessons ?? []).map((l) => ({
       date: l.date,
       time: `${l.startTime}-${l.endTime}`,
       type: '안무' as const,
       amount: l.price,
       choreoId: l.choreoId,
+      allocated: undefined as number | undefined,
     })),
   ].sort((a, b) => b.date.localeCompare(a.date) || a.time.localeCompare(b.time))
 
@@ -172,6 +180,9 @@ export function StudentDetail({ student, onBack, onUpdate, onDelete }: StudentDe
                   </span>
                   <span className="text-gray-600">{formatDate(lesson.date)}</span>
                   <span className="text-gray-400 text-xs">{lesson.time}</span>
+                  {lesson.allocated != null && (
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-600">배분 {lesson.allocated}분</span>
+                  )}
                 </div>
                 <span className="font-medium">{formatCurrency(lesson.amount)}</span>
               </div>

@@ -100,6 +100,7 @@ export interface LessonSettlement {
   description: string
   amount: number
   paid: boolean
+  allocated?: number // 선수별 배분된 분(minutes), undefined면 1/n 균등
 }
 
 export interface StudentSettlement {

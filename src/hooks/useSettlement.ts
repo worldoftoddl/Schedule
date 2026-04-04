@@ -119,6 +119,7 @@ function computeSettlement(
             description: desc,
             amount,
             paid,
+            allocated: allocation,
           })
           if (paid) {
             entry.paidAmount += amount
