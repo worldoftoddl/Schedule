@@ -74,6 +74,16 @@ export function TimeLessonForm({ date, editLesson, onSubmit, onCancel }: TimeLes
     }
   }, [editLesson, students]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // 수정 모드: 기존 레슨과 일치하는 레벨 자동 매칭
+  useEffect(() => {
+    if (editLesson && timeLevels && timeLevels.length > 0 && !levelId) {
+      const match = timeLevels.find(
+        (l) => l.pricePerHour === editLesson.totalPrice && l.baseDuration === (editLesson.baseDuration ?? 60)
+      )
+      if (match) setLevelId(match.id)
+    }
+  }, [editLesson, timeLevels]) // eslint-disable-line react-hooks/exhaustive-deps
+
   const filteredStudents = teamId
     ? students?.filter((s) => s.teamId === teamId)
     : students
@@ -97,9 +107,9 @@ export function TimeLessonForm({ date, editLesson, onSubmit, onCancel }: TimeLes
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if ((!editLesson && !levelId) || price <= 0) return
+    if (!levelId || price <= 0) return
     const selectedLevel = timeLevels?.find((l) => l.id === levelId)
-    const baseDur = editLesson?.baseDuration ?? selectedLevel?.baseDuration ?? 60
+    const baseDur = selectedLevel?.baseDuration ?? editLesson?.baseDuration ?? 60
     let studentAllocations: Record<string, number> | undefined
     if (useAllocation && selectedStudentIds.length >= 2) {
       studentAllocations = {}
@@ -153,30 +163,19 @@ export function TimeLessonForm({ date, editLesson, onSubmit, onCancel }: TimeLes
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">
-          {editLesson ? '레슨비 (원)' : '레슨 항목'} <span className="text-red-400">*</span>
+          레슨 항목 <span className="text-red-400">*</span>
         </label>
-        {editLesson ? (
-          <input
-            type="number"
-            inputMode="numeric"
-            value={totalPrice}
-            onChange={(e) => setTotalPrice(e.target.value)}
-            className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400"
-            required
-          />
-        ) : (
-          <select
-            value={levelId}
-            onChange={(e) => handleLevelChange(e.target.value)}
-            className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white"
-            required
-          >
-            <option value="">항목 선택</option>
-            {timeLevels?.map((l) => (
-              <option key={l.id} value={l.id}>{l.name} — {l.baseDuration}분 {formatCurrency(l.pricePerHour)}</option>
-            ))}
-          </select>
-        )}
+        <select
+          value={levelId}
+          onChange={(e) => handleLevelChange(e.target.value)}
+          className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white"
+          required
+        >
+          <option value="">항목 선택</option>
+          {timeLevels?.map((l) => (
+            <option key={l.id} value={l.id}>{l.name} — {l.baseDuration}분 {formatCurrency(l.pricePerHour)}</option>
+          ))}
+        </select>
         {selectedStudentIds.length > 1 && price > 0 && !useAllocation && (
           <p className="text-xs text-indigo-500 mt-1">
             1인당 {formatCurrency(perStudent)}
@@ -319,7 +318,7 @@ export function TimeLessonForm({ date, editLesson, onSubmit, onCancel }: TimeLes
         </button>
         <button
           type="submit"
-          disabled={(!editLesson && !levelId) || price <= 0}
+          disabled={!levelId || price <= 0}
           className="flex-1 py-2.5 text-sm rounded-lg bg-indigo-500 text-white hover:bg-indigo-600 disabled:bg-gray-300 min-h-[44px]"
         >
           {editLesson ? '수정' : '추가'}
