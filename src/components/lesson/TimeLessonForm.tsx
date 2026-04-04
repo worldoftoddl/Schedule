@@ -233,9 +233,9 @@ export function TimeLessonForm({ date, editLesson, onSubmit, onCancel }: TimeLes
               onChange={(e) => {
                 setUseAllocation(e.target.checked)
                 if (e.target.checked && Object.keys(allocations).length === 0) {
-                  // 기본값: 총 수업시간을 균등 분배
-                  const totalMin = calcTimes(startTime, endTime) * 60
-                  const perMin = Math.round(totalMin / selectedStudentIds.length)
+                  // 기본값: 레슨 항목의 baseDuration을 균등 분배
+                  const baseDur = editLesson?.baseDuration ?? timeLevels?.find((l) => l.id === levelId)?.baseDuration ?? 60
+                  const perMin = Math.round(baseDur / selectedStudentIds.length)
                   const init: Record<string, string> = {}
                   for (const sid of selectedStudentIds) init[sid] = String(perMin)
                   setAllocations(init)
