@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ChevronLeft, ChevronRight, Banknote, AlertCircle, Check } from 'lucide-react'
+import { ChevronLeft, ChevronRight, ChevronDown, Banknote, AlertCircle, Check } from 'lucide-react'
 import { useSettlement } from '../../hooks/useSettlement'
 import { usePayments } from '../../hooks/usePayments'
 import { formatCurrency, formatDate, getMonthKey } from '../../utils/format'
@@ -10,9 +10,10 @@ type ViewMode = 'student' | 'lesson' | 'team'
 export function SettlementView() {
   const [date, setDate] = useState(new Date())
   const [viewMode, setViewMode] = useState<ViewMode>('student')
+  const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
   const month = getMonthKey(date)
   const { settlement, teams, students } = useSettlement(month)
-  const { toggleLessonPayment } = usePayments()
+  const { toggleLessonPayment, batchPayLessons } = usePayments()
 
   const navigateMonth = (dir: 'prev' | 'next') => {
     setDate((prev) => {
@@ -20,6 +21,27 @@ export function SettlementView() {
       d.setMonth(d.getMonth() + (dir === 'next' ? 1 : -1))
       return d
     })
+    setCollapsed(new Set())
+  }
+
+  const toggleCollapse = (id: string) => {
+    setCollapsed((prev) => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
+
+  const handleBatchPay = (summaries: StudentSettlement[]) => {
+    const unpaid: { studentId: string; month: string; lessonId: string; lessonType: 'time' | 'choreo'; amount: number }[] = []
+    for (const s of summaries) {
+      for (const l of s.lessons) {
+        if (!l.paid) {
+          unpaid.push({ studentId: s.studentId, month, lessonId: l.lessonId, lessonType: l.lessonType, amount: l.amount })
+        }
+      }
+    }
+    if (unpaid.length > 0) batchPayLessons(unpaid)
   }
 
   const year = date.getFullYear()
@@ -56,32 +78,65 @@ export function SettlementView() {
     </div>
   )
 
-  const renderStudentCard = (s: StudentSettlement) => (
-    <div key={s.studentId} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-      <div className="px-4 py-3 border-b border-gray-50">
-        <div className="flex items-center justify-between">
-          <span className="font-medium">{s.studentName}</span>
-          <div className="text-xs text-gray-500">
-            {formatCurrency(s.paidAmount)} / {formatCurrency(s.totalAmount)}
+  const renderStudentCard = (s: StudentSettlement, collapsePrefix = '') => {
+    const key = collapsePrefix + s.studentId
+    const isCollapsed = collapsed.has(key)
+    const hasUnpaid = s.outstandingAmount > 0
+
+    return (
+      <div key={s.studentId} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <div
+          className="px-4 py-3 border-b border-gray-50 cursor-pointer"
+          onClick={() => toggleCollapse(key)}
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1.5">
+              {isCollapsed ? <ChevronRight size={14} className="text-gray-400" /> : <ChevronDown size={14} className="text-gray-400" />}
+              <span className="font-medium">{s.studentName}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              {hasUnpaid && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); handleBatchPay([s]) }}
+                  className="text-[10px] px-2 py-0.5 rounded bg-green-50 text-green-600 hover:bg-green-100"
+                >
+                  일괄 수령
+                </button>
+              )}
+              <div className="text-xs text-gray-500">
+                {formatCurrency(s.paidAmount)} / {formatCurrency(s.totalAmount)}
+              </div>
+            </div>
           </div>
+          {hasUnpaid && (
+            <p className="text-xs text-red-500 mt-1 ml-5">미수금 {formatCurrency(s.outstandingAmount)}</p>
+          )}
         </div>
-        {s.outstandingAmount > 0 && (
-          <p className="text-xs text-red-500 mt-1">미수금 {formatCurrency(s.outstandingAmount)}</p>
+        {!isCollapsed && (
+          <div className="divide-y divide-gray-50">
+            {s.lessons.map((lesson) => renderLessonRow(lesson, s.studentId))}
+          </div>
         )}
       </div>
-      <div className="divide-y divide-gray-50">
-        {s.lessons.map((lesson) => renderLessonRow(lesson, s.studentId))}
-      </div>
-    </div>
-  )
+    )
+  }
 
   const renderByStudent = () => {
     if (!settlement || settlement.studentSummaries.length === 0) {
       return <p className="text-center text-gray-400 text-sm py-8">이번 달 수업 기록이 없습니다</p>
     }
+    const hasAnyUnpaid = settlement.studentSummaries.some((s) => s.outstandingAmount > 0)
     return (
       <div className="px-4 flex flex-col gap-3">
-        {settlement.studentSummaries.map(renderStudentCard)}
+        {hasAnyUnpaid && (
+          <button
+            onClick={() => handleBatchPay(settlement.studentSummaries)}
+            className="self-end text-xs px-3 py-1.5 rounded-lg bg-green-500 text-white hover:bg-green-600"
+          >
+            전체 일괄 수령
+          </button>
+        )}
+        {settlement.studentSummaries.map((s) => renderStudentCard(s))}
       </div>
     )
   }
@@ -100,8 +155,18 @@ export function SettlementView() {
       return <p className="text-center text-gray-400 text-sm py-8">이번 달 수업 기록이 없습니다</p>
     }
 
+    const hasAnyUnpaid = allLessons.some((a) => !a.lesson.paid)
+
     return (
       <div className="px-4">
+        {hasAnyUnpaid && (
+          <button
+            onClick={() => handleBatchPay(settlement.studentSummaries)}
+            className="mb-3 ml-auto block text-xs px-3 py-1.5 rounded-lg bg-green-500 text-white hover:bg-green-600"
+          >
+            전체 일괄 수령
+          </button>
+        )}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden divide-y divide-gray-50">
           {allLessons.map(({ lesson, studentId, studentName }) => (
             <div
@@ -165,22 +230,46 @@ export function SettlementView() {
 
     return (
       <div className="px-4 flex flex-col gap-4">
-        {Array.from(grouped.values()).map((group) => (
-          <div key={group.teamName}>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-gray-600">{group.teamName}</span>
-              <div className="text-xs text-gray-400">
-                {formatCurrency(group.paid)} / {formatCurrency(group.total)}
-                {group.total - group.paid > 0 && (
-                  <span className="text-red-500 ml-1">미수금 {formatCurrency(group.total - group.paid)}</span>
-                )}
+        {Array.from(grouped.entries()).map(([teamId, group]) => {
+          const teamKey = `team-${teamId}`
+          const isTeamCollapsed = collapsed.has(teamKey)
+          const teamUnpaid = group.total - group.paid
+
+          return (
+            <div key={teamId}>
+              <div
+                className="flex items-center justify-between mb-2 cursor-pointer"
+                onClick={() => toggleCollapse(teamKey)}
+              >
+                <div className="flex items-center gap-1.5">
+                  {isTeamCollapsed ? <ChevronRight size={14} className="text-gray-400" /> : <ChevronDown size={14} className="text-gray-400" />}
+                  <span className="text-sm font-medium text-gray-600">{group.teamName}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  {teamUnpaid > 0 && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleBatchPay(group.members) }}
+                      className="text-[10px] px-2 py-0.5 rounded bg-green-50 text-green-600 hover:bg-green-100"
+                    >
+                      일괄 수령
+                    </button>
+                  )}
+                  <div className="text-xs text-gray-400">
+                    {formatCurrency(group.paid)} / {formatCurrency(group.total)}
+                    {teamUnpaid > 0 && (
+                      <span className="text-red-500 ml-1">미수금 {formatCurrency(teamUnpaid)}</span>
+                    )}
+                  </div>
+                </div>
               </div>
+              {!isTeamCollapsed && (
+                <div className="flex flex-col gap-2">
+                  {group.members.map((s) => renderStudentCard(s, `${teamKey}-`))}
+                </div>
+              )}
             </div>
-            <div className="flex flex-col gap-2">
-              {group.members.map(renderStudentCard)}
-            </div>
-          </div>
-        ))}
+          )
+        })}
       </div>
     )
   }

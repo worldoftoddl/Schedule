@@ -57,5 +57,21 @@ export function usePayments() {
     }
   }
 
-  return { addPayment, deletePayment, deletePaymentsByLessonId, toggleLessonPayment }
+  const batchPayLessons = async (
+    lessons: { studentId: string; month: string; lessonId: string; lessonType: LessonType; amount: number }[]
+  ) => {
+    const payments: Payment[] = lessons.map((l) => ({
+      id: generateId(),
+      studentId: l.studentId,
+      month: l.month,
+      amount: l.amount,
+      date: new Date().toISOString().split('T')[0],
+      lessonId: l.lessonId,
+      lessonType: l.lessonType,
+      createdAt: new Date(),
+    }))
+    await db.payments.bulkAdd(payments)
+  }
+
+  return { addPayment, deletePayment, deletePaymentsByLessonId, toggleLessonPayment, batchPayLessons }
 }
