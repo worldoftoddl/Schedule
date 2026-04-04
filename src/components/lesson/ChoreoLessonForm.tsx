@@ -75,11 +75,14 @@ export function ChoreoLessonForm({ date, editLesson, onSubmit, onCancel }: Chore
 
   // Auto-select existing choreography or switch to new mode
   useEffect(() => {
-    if (activeChoreographies.length > 0 && !isNewChoreo) {
-      const choreo = activeChoreographies[0]
-      setChoreoId(choreo.id)
-      setLevelId(choreo.levelId)
-    } else if (activeChoreographies.length === 0 && studentId) {
+    if (activeChoreographies.length > 0) {
+      if (!choreoId || !activeChoreographies.find((c) => c.id === choreoId)) {
+        const choreo = activeChoreographies[0]
+        setChoreoId(choreo.id)
+        setLevelId(choreo.levelId)
+        setIsNewChoreo(false)
+      }
+    } else if (studentId) {
       setIsNewChoreo(true)
       setChoreoId('')
     }
