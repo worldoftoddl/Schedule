@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../../db/schema'
-import { splitPrice, formatCurrency, calcTimes, calcStudentPrice, getDateKey } from '../../utils/format'
+import { splitPrice, formatCurrency, calcTimes, getDateKey } from '../../utils/format'
 import { endOfMonth } from 'date-fns'
 import type { TimeLesson } from '../../types'
 
@@ -16,7 +16,7 @@ interface TimeLessonFormProps {
     baseDuration: number
     totalPrice: number
     studentIds: string[]
-    studentAllocations?: Record<string, number>
+    studentLevelOverrides?: Record<string, { levelId: string; levelName: string; price: number; baseDuration: number }>
     memo?: string
     recurring: boolean
     recurringUntil?: string
@@ -40,12 +40,12 @@ export function TimeLessonForm({ date, editLesson, onSubmit, onCancel }: TimeLes
   const [teamId, setTeamId] = useState('')
   const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>(editLesson?.studentIds ?? [])
   const [memo, setMemo] = useState(editLesson?.memo ?? '')
-  const [useAllocation, setUseAllocation] = useState(() => !!editLesson?.studentAllocations)
-  const [allocations, setAllocations] = useState<Record<string, string>>(() => {
-    if (editLesson?.studentAllocations) {
+  const [useOverride, setUseOverride] = useState(() => !!editLesson?.studentLevelOverrides)
+  const [levelOverrides, setLevelOverrides] = useState<Record<string, string>>(() => {
+    if (editLesson?.studentLevelOverrides) {
       const m: Record<string, string> = {}
-      for (const [k, v] of Object.entries(editLesson.studentAllocations)) {
-        m[k] = String(v)
+      for (const [k, v] of Object.entries(editLesson.studentLevelOverrides)) {
+        m[k] = v.levelId
       }
       return m
     }
@@ -110,11 +110,20 @@ export function TimeLessonForm({ date, editLesson, onSubmit, onCancel }: TimeLes
     if (!levelId || price <= 0) return
     const selectedLevel = timeLevels?.find((l) => l.id === levelId)
     const baseDur = selectedLevel?.baseDuration ?? editLesson?.baseDuration ?? 60
-    let studentAllocations: Record<string, number> | undefined
-    if (useAllocation && selectedStudentIds.length >= 2) {
-      studentAllocations = {}
+    let studentLevelOverrides: Record<string, { levelId: string; levelName: string; price: number; baseDuration: number }> | undefined
+    if (useOverride && selectedStudentIds.length >= 2) {
+      studentLevelOverrides = {}
       for (const sid of selectedStudentIds) {
-        studentAllocations[sid] = Number(allocations[sid]) || 0
+        const oLevelId = levelOverrides[sid]
+        const oLevel = timeLevels?.find((l) => l.id === oLevelId)
+        if (oLevel) {
+          studentLevelOverrides[sid] = {
+            levelId: oLevel.id,
+            levelName: oLevel.name,
+            price: oLevel.pricePerHour,
+            baseDuration: oLevel.baseDuration,
+          }
+        }
       }
     }
     onSubmit({
@@ -125,7 +134,7 @@ export function TimeLessonForm({ date, editLesson, onSubmit, onCancel }: TimeLes
       baseDuration: baseDur,
       totalPrice: price,
       studentIds: selectedStudentIds,
-      studentAllocations,
+      studentLevelOverrides,
       memo: memo.trim() || undefined,
       recurring,
       recurringUntil: recurring ? recurringUntil : undefined,
@@ -176,7 +185,7 @@ export function TimeLessonForm({ date, editLesson, onSubmit, onCancel }: TimeLes
             <option key={l.id} value={l.id}>{l.name} — {l.baseDuration}분 {formatCurrency(l.pricePerHour)}</option>
           ))}
         </select>
-        {selectedStudentIds.length > 1 && price > 0 && !useAllocation && (
+        {selectedStudentIds.length > 1 && price > 0 && !useOverride && (
           <p className="text-xs text-indigo-500 mt-1">
             1인당 {formatCurrency(perStudent)}
           </p>
@@ -223,48 +232,39 @@ export function TimeLessonForm({ date, editLesson, onSubmit, onCancel }: TimeLes
         )}
       </div>
 
-      {selectedStudentIds.length >= 2 && price > 0 && (
+      {selectedStudentIds.length >= 2 && (
         <div>
           <label className="flex items-center gap-2 cursor-pointer mb-2">
             <input
               type="checkbox"
-              checked={useAllocation}
-              onChange={(e) => {
-                setUseAllocation(e.target.checked)
-                if (e.target.checked && Object.keys(allocations).length === 0) {
-                  // 기본값: 레슨 항목의 baseDuration을 균등 분배
-                  const baseDur = editLesson?.baseDuration ?? timeLevels?.find((l) => l.id === levelId)?.baseDuration ?? 60
-                  const perMin = Math.round(baseDur / selectedStudentIds.length)
-                  const init: Record<string, string> = {}
-                  for (const sid of selectedStudentIds) init[sid] = String(perMin)
-                  setAllocations(init)
-                }
-              }}
+              checked={useOverride}
+              onChange={(e) => setUseOverride(e.target.checked)}
               className="w-5 h-5 rounded border-gray-300 text-indigo-500 focus:ring-indigo-400"
             />
-            <span className="text-sm text-gray-700">선수별 시간 배분</span>
+            <span className="text-sm text-gray-700">선수별 단가 변경</span>
           </label>
-          {useAllocation && (
+          {useOverride && (
             <div className="flex flex-col gap-2 pl-1">
               {selectedStudentIds.map((sid) => {
                 const student = students?.find((s) => s.id === sid)
-                const mins = Number(allocations[sid]) || 0
-                const baseDur = editLesson?.baseDuration ?? timeLevels?.find((l) => l.id === levelId)?.baseDuration ?? 60
-                const studentPrice = calcStudentPrice(mins, baseDur, price)
+                const oLevelId = levelOverrides[sid] ?? ''
+                const oLevel = timeLevels?.find((l) => l.id === oLevelId)
                 return (
                   <div key={sid} className="flex items-center gap-2">
                     <span className="text-sm text-gray-600 w-16 truncate">{student?.name ?? sid}</span>
-                    <input
-                      type="number"
-                      inputMode="numeric"
-                      value={allocations[sid] ?? ''}
-                      onChange={(e) => setAllocations((prev) => ({ ...prev, [sid]: e.target.value }))}
-                      className="w-20 px-2 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
-                      placeholder="분"
-                      min={0}
-                    />
-                    <span className="text-xs text-gray-500">분</span>
-                    <span className="text-xs text-indigo-500 ml-auto">{formatCurrency(studentPrice)}</span>
+                    <select
+                      value={oLevelId}
+                      onChange={(e) => setLevelOverrides((prev) => ({ ...prev, [sid]: e.target.value }))}
+                      className="flex-1 px-2 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white"
+                    >
+                      <option value="">항목 선택</option>
+                      {timeLevels?.map((l) => (
+                        <option key={l.id} value={l.id}>{l.name} — {l.baseDuration}분 {formatCurrency(l.pricePerHour)}</option>
+                      ))}
+                    </select>
+                    {oLevel && (
+                      <span className="text-xs text-indigo-500 whitespace-nowrap">{formatCurrency(oLevel.pricePerHour)}</span>
+                    )}
                   </div>
                 )
               })}

@@ -56,8 +56,8 @@ export function SettlementView() {
         <div className="flex items-center gap-2">
           <span className={`inline-block w-1.5 h-1.5 rounded-full ${lesson.lessonType === 'time' ? 'bg-indigo-400' : 'bg-purple-400'}`} />
           <span className="text-sm text-gray-700 truncate">{formatDate(lesson.date)} {lesson.description}</span>
-          {lesson.allocated != null && (
-            <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-600 whitespace-nowrap">배분</span>
+          {lesson.levelOverride && (
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-600 whitespace-nowrap">{lesson.levelOverride}</span>
           )}
         </div>
         <span className="text-xs text-gray-500 ml-3.5">{formatCurrency(lesson.amount)}</span>

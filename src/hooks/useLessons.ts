@@ -152,7 +152,7 @@ export function useLessons() {
     baseDuration: number
     totalPrice: number
     studentIds: string[]
-    studentAllocations?: Record<string, number>
+    studentLevelOverrides?: Record<string, { levelId: string; levelName: string; price: number; baseDuration: number }>
     memo?: string
     recurringUntil?: string
   }, updateAll = false) => {
@@ -164,7 +164,7 @@ export function useLessons() {
       totalPrice: data.totalPrice,
       studentIds: data.studentIds,
       pricePerStudent: splitPrice(data.totalPrice, data.studentIds.length),
-      studentAllocations: data.studentAllocations as Record<string, number> | undefined ?? undefined,
+      studentLevelOverrides: data.studentLevelOverrides ?? undefined,
       memo: data.memo,
       updatedAt: new Date(),
     }

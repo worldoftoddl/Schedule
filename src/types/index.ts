@@ -29,7 +29,7 @@ export interface TimeLesson {
   totalPrice: number
   studentIds: string[]
   pricePerStudent: number // computed: totalPrice / studentIds.length
-  studentAllocations?: Record<string, number> // studentId → 배분된 분(minutes), 없으면 1/n 균등
+  studentLevelOverrides?: Record<string, { levelId: string; levelName: string; price: number; baseDuration: number }>
   recurringGroupId?: string
   memo?: string
   createdAt: Date
@@ -100,7 +100,7 @@ export interface LessonSettlement {
   description: string
   amount: number
   paid: boolean
-  allocated?: number // 선수별 배분된 분(minutes), undefined면 1/n 균등
+  levelOverride?: string // 오버라이드된 레벨명 (표시용)
 }
 
 export interface StudentSettlement {
