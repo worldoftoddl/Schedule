@@ -22,7 +22,9 @@ export function StudentDetail({ student, onBack, onUpdate, onDelete }: StudentDe
   const [deleteChoreoTarget, setDeleteChoreoTarget] = useState<Choreography | null>(null)
   const [filterMonth, setFilterMonth] = useState('')
   const [filterChoreoId, setFilterChoreoId] = useState('')
-  const { deleteChoreography } = useChoreographies()
+  const [editChoreoId, setEditChoreoId] = useState<string | null>(null)
+  const [editTotalHours, setEditTotalHours] = useState('')
+  const { deleteChoreography, updateTotalHours } = useChoreographies()
 
   const timeLessons = useLiveQuery(
     () => db.timeLessons.toArray().then((all) =>
@@ -117,7 +119,38 @@ export function StudentDetail({ student, onBack, onUpdate, onDelete }: StudentDe
               <div key={c.id} className="flex items-center justify-between py-1">
                 <span className="text-sm">{c.title} ({level?.name})</span>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-purple-500">{completedHours}/{c.totalHours}타임</span>
+                  {editChoreoId === c.id ? (
+                    <div className="flex items-center gap-1">
+                      <span className="text-xs text-purple-500">{completedHours}/</span>
+                      <input
+                        type="number"
+                        inputMode="numeric"
+                        value={editTotalHours}
+                        onChange={(e) => setEditTotalHours(e.target.value)}
+                        onBlur={() => {
+                          const val = Number(editTotalHours)
+                          if (val > 0) updateTotalHours(c.id, val)
+                          setEditChoreoId(null)
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') (e.target as HTMLInputElement).blur()
+                          if (e.key === 'Escape') setEditChoreoId(null)
+                        }}
+                        className="w-12 px-1 py-0.5 text-xs border border-purple-300 rounded focus:outline-none focus:ring-1 focus:ring-purple-400"
+                        autoFocus
+                        min={1}
+                        step={0.5}
+                      />
+                      <span className="text-xs text-purple-500">타임</span>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => { setEditChoreoId(c.id); setEditTotalHours(String(c.totalHours)) }}
+                      className="text-xs text-purple-500 hover:text-purple-700"
+                    >
+                      {completedHours}/{c.totalHours}타임
+                    </button>
+                  )}
                   <button
                     onClick={() => setDeleteChoreoTarget(c)}
                     className="p-1 text-gray-300 hover:text-red-400"

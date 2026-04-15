@@ -42,6 +42,11 @@ export function useChoreographies() {
     }
   }
 
+  const updateTotalHours = async (id: string, totalHours: number) => {
+    await db.choreographies.update(id, { totalHours, updatedAt: new Date() })
+    await updateStatus(id)
+  }
+
   const deleteChoreography = async (id: string) => {
     await db.choreographies.delete(id)
     // 연결된 안무 레슨도 삭제
@@ -58,5 +63,6 @@ export function useChoreographies() {
     deleteChoreography,
     getCompletedHours,
     updateStatus,
+    updateTotalHours,
   }
 }
