@@ -9,14 +9,17 @@ export function DataManagement() {
 
   const exportData = async () => {
     const data = {
-      version: 1,
+      version: 2,
       exportedAt: new Date().toISOString(),
+      teams: await db.teams.toArray(),
       students: await db.students.toArray(),
       timeLessons: await db.timeLessons.toArray(),
       choreoLessons: await db.choreoLessons.toArray(),
       choreographies: await db.choreographies.toArray(),
       choreoLevels: await db.choreoLevels.toArray(),
+      timeLessonLevels: await db.timeLessonLevels.toArray(),
       payments: await db.payments.toArray(),
+      blockedTimes: await db.blockedTimes.toArray(),
     }
 
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
@@ -41,20 +44,26 @@ export function DataManagement() {
         return
       }
 
-      await db.transaction('rw', [db.students, db.timeLessons, db.choreoLessons, db.choreographies, db.choreoLevels, db.payments], async () => {
+      await db.transaction('rw', [db.teams, db.students, db.timeLessons, db.choreoLessons, db.choreographies, db.choreoLevels, db.timeLessonLevels, db.payments, db.blockedTimes], async () => {
+        await db.teams.clear()
         await db.students.clear()
         await db.timeLessons.clear()
         await db.choreoLessons.clear()
         await db.choreographies.clear()
         await db.choreoLevels.clear()
+        await db.timeLessonLevels.clear()
         await db.payments.clear()
+        await db.blockedTimes.clear()
 
+        if (data.teams?.length) await db.teams.bulkAdd(data.teams)
         if (data.students?.length) await db.students.bulkAdd(data.students)
         if (data.timeLessons?.length) await db.timeLessons.bulkAdd(data.timeLessons)
         if (data.choreoLessons?.length) await db.choreoLessons.bulkAdd(data.choreoLessons)
         if (data.choreographies?.length) await db.choreographies.bulkAdd(data.choreographies)
         if (data.choreoLevels?.length) await db.choreoLevels.bulkAdd(data.choreoLevels)
+        if (data.timeLessonLevels?.length) await db.timeLessonLevels.bulkAdd(data.timeLessonLevels)
         if (data.payments?.length) await db.payments.bulkAdd(data.payments)
+        if (data.blockedTimes?.length) await db.blockedTimes.bulkAdd(data.blockedTimes)
       })
 
       setImportStatus('데이터를 복원했습니다')
@@ -66,13 +75,16 @@ export function DataManagement() {
   }
 
   const clearAll = async () => {
-    await db.transaction('rw', [db.students, db.timeLessons, db.choreoLessons, db.choreographies, db.choreoLevels, db.payments], async () => {
+    await db.transaction('rw', [db.teams, db.students, db.timeLessons, db.choreoLessons, db.choreographies, db.choreoLevels, db.timeLessonLevels, db.payments, db.blockedTimes], async () => {
+      await db.teams.clear()
       await db.students.clear()
       await db.timeLessons.clear()
       await db.choreoLessons.clear()
       await db.choreographies.clear()
       await db.choreoLevels.clear()
+      await db.timeLessonLevels.clear()
       await db.payments.clear()
+      await db.blockedTimes.clear()
     })
     setShowClearConfirm(false)
   }
